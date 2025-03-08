@@ -2,8 +2,11 @@ from typing import Dict, List, Any
 from crawlers.base_crawler import BaseCrawler
 from crawlers.helpers import print_divider
 
+
 class BodyFilterCrawler(BaseCrawler):
-    def __init__(self, sources, max_articles: int, days: int, body_search_terms: List[str]):
+    def __init__(
+        self, sources, max_articles: int, days: int, body_search_terms: List[str]
+    ):
         super().__init__(sources, max_articles, days)
         self.body_search_terms = body_search_terms
 

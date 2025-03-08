@@ -4,6 +4,7 @@ import datetime
 from fundus import Crawler, PublisherCollection, Sitemap
 from crawlers.helpers import display, print_divider
 
+
 class BaseCrawler(ABC):
     def __init__(self, sources, max_articles: int, days: int):
         # NOTE: adding restrict_sources_to=[Sitemap] makes The Guardian not work
@@ -18,7 +19,9 @@ class BaseCrawler(ABC):
 
     def run_crawler(self):
         filter_params = self.get_filter_params()
-        for article in self.crawler.crawl(max_articles=self.max_articles, **filter_params):
+        for article in self.crawler.crawl(
+            max_articles=self.max_articles, **filter_params
+        ):
             if article.publishing_date.date() > self.end_date:
                 display(article)
             elif self.max_articles:
