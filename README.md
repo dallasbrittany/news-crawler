@@ -10,7 +10,9 @@ Very simple usage of `fundus` for news crawling. If it ends up being helpful, ma
 - Install with `pipenv` and make sure to use Python `3.8+` for `fundus` (note that this repo specifically was built with `3.11.10`)
 - To use see usage, call run `main.py` and see something like this:
 ```
-usage: main.py [-h] [--max_articles MAX_ARTICLES] [--days_back DAYS_BACK] {body,url,ny,guardian}
+usage: main.py [-h] [--max_articles MAX_ARTICLES] [--days_back DAYS_BACK] [--include INCLUDE [INCLUDE ...]]
+               [--exclude EXCLUDE [EXCLUDE ...]]
+               {body,url,ny,guardian}
 ```
 
 - For example, to see 10 articles from the Guardian that are from the last 2 days:
@@ -18,8 +20,21 @@ usage: main.py [-h] [--max_articles MAX_ARTICLES] [--days_back DAYS_BACK] {body,
 python main.py guardian --max_articles 10 --days_back 2
 ```
 
+Or to specify your own search terms for the body of articles in US and UK news sources with defaults for max articles and days back:
+
+```
+python main.py body --include AI technology
+```
+
+Or to specify technology but not AI in the URL (with the rest of the settings being defaults):
+
+```
+python main.py url --include technology --exclude AI
+```
+
 ## Future Work
 - General code improvements
+- More options for search (like filtering with a single source)
 - Handle errors gracefully like `lxml.etree.ParserError: Document is empty`
 - Get the filters to combine better with body filter and date
 - Make some more useful preset searches like daily essential news or favorite subjects
