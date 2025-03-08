@@ -1,6 +1,9 @@
 # These are simple ways to display the article so it is easy to see a summary but also go back and read the entire body when needed
 
-def display1(article):
+def print_divider():
+    print("-"*20)
+
+def display(article):
     """
     Format:
 
@@ -16,9 +19,9 @@ def display1(article):
     print(article.title)
     print(article.publishing_date)
     print(article.html.requested_url)
-    print("-"*20)
+    print_divider()
 
-def display2(article):
+def display_alt(article):
     """
     Format:
 
@@ -32,4 +35,4 @@ def display2(article):
     print(article.body)
     print("\n")
     print(article)
-    print("-"*20)
+    print_divider()
