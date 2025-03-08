@@ -4,12 +4,12 @@ from searches.base_crawler import BaseCrawler
 from searches.helpers import display, print_divider
 
 class UrlFilterCrawler(BaseCrawler):
-    def __init__(self, max_articles: int, days: int, filter_include_terms: List[str], filter_out_terms: List[str]):
-        super().__init__(max_articles, days)
+    def __init__(self, sources, max_articles: int, days: int, filter_include_terms: List[str], filter_out_terms: List[str]):
+        super().__init__(sources, max_articles, days)
         self.filter_out_terms_list = filter_out_terms
         self.filter_include_terms_list = filter_include_terms
 
-    def get_crawl_params(self) -> Dict[str, Any]:
+    def get_filter_params(self) -> Dict[str, Any]:
         filter_out_terms = "|".join(self.filter_out_terms_list)
         filter_out = regex_filter(filter_out_terms)
 
