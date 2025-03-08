@@ -1,6 +1,5 @@
 import argparse
-from searches.body_filter import BodyFilterCrawler
-from searches.url_filter import UrlFilterCrawler
+from searches import BodyFilterCrawler, UrlFilterCrawler
 
 def main(crawler: str):
     max_articles = None # unlimited with None
@@ -10,7 +9,7 @@ def main(crawler: str):
     print(f"Using {crawler} crawler for search{max_str} and going {days_back} day(s) back.\n")
     if crawler == "filter":
         # matches on any of these terms in the body
-        terms_environment = ["pollution", "environmental", "climate crisis", "environment", "EPA", "coral", "reef"]
+        terms_environment = ["pollution", "environmental", "climate crisis", "EPA", "coral", "reef"]
         terms_us_politics = ["trump"]
         body_search_terms = terms_environment
 

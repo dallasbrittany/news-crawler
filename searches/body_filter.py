@@ -1,15 +1,11 @@
 from typing import Dict, List, Any
-from fundus import Crawler, PublisherCollection, Sitemap
-import datetime
-from searches.helpers import display, print_divider
+from searches.base_crawler import BaseCrawler
+from searches.helpers import print_divider
 
-class BodyFilterCrawler:
-    def __init__(self, max_articles, days: int, body_search_terms: List[str]):
-        self.crawler = Crawler(PublisherCollection.us, PublisherCollection.uk, restrict_sources_to=[Sitemap])
-        self.max_articles = max_articles
+class BodyFilterCrawler(BaseCrawler):
+    def __init__(self, max_articles: int, days: int, body_search_terms: List[str]):
+        super().__init__(max_articles, days)
         self.body_search_terms = body_search_terms
-        self.days = days
-        self.end_date = datetime.date.today() - datetime.timedelta(days=days)
 
     def body_filter(self, extracted: Dict[str, Any]) -> bool:
         if body := extracted.get("body"):
@@ -18,15 +14,10 @@ class BodyFilterCrawler:
                     return False
         return True
 
+    def get_crawl_params(self) -> Dict[str, Any]:
+            return {"only_complete": self.body_filter}
+
     def run_crawler(self):
         print("body search terms", self.body_search_terms)
         print_divider()
-
-        for article in self.crawler.crawl(max_articles=self.max_articles, only_complete=self.body_filter):
-            # land(body_filter, date_filter) doesn't seem to work as expected, so just not printing the ones with unwanted dates is a workaround
-            if article.publishing_date.date() > self.end_date:
-                display(article)
-            elif self.max_articles:
-                # because of the workaround with filtering out dates, the max article count likely won't match the number of found articles, so printing this is helpful in that case
-                print("\n(Skipping display of older article.)")
-                print_divider()
+        super().run_crawler()
