@@ -1,12 +1,12 @@
 from typing import List
 import datetime
-from fundus import Crawler, PublisherCollection
+from fundus import Crawler, PublisherCollection, Sitemap
 from fundus.scraping.filter import inverse, regex_filter, lor, land
 from searches.helpers import display, print_divider
 
 class UrlFilterCrawler:
     def __init__(self, max_articles: int, days: int, filter_include_terms: List[str], filter_out_terms: List[str]):
-        self.crawler = Crawler(PublisherCollection.us)
+        self.crawler = Crawler(PublisherCollection.us, PublisherCollection.uk, restrict_sources_to=[Sitemap])
         self.max_articles = max_articles
         self.filter_out_terms_list = filter_out_terms
         self.filter_include_terms_list = filter_include_terms

@@ -1,11 +1,11 @@
 from typing import Dict, List, Any
-from fundus import Crawler, PublisherCollection
+from fundus import Crawler, PublisherCollection, Sitemap
 import datetime
 from searches.helpers import display, print_divider
 
 class BodyFilterCrawler:
     def __init__(self, max_articles, days: int, body_search_terms: List[str]):
-        self.crawler = Crawler(PublisherCollection.us)
+        self.crawler = Crawler(PublisherCollection.us, PublisherCollection.uk, restrict_sources_to=[Sitemap])
         self.max_articles = max_articles
         self.body_search_terms = body_search_terms
         self.days = days
