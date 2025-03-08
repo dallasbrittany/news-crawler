@@ -1,17 +1,21 @@
+from typing import List
 from fundus import Crawler, PublisherCollection
 from fundus.scraping.filter import inverse, regex_filter, lor, land
+from searches.helpers import display1
 
-crawler = Crawler(PublisherCollection.us)
+class UrlFilterCrawler:
+    def __init__(self, max_articles: int, filter_out_terms: str, filter_include_terms: List[str]):
+        self.crawler = Crawler(PublisherCollection.us)
+        self.max_articles = max_articles
+        self.filter_out_terms_list = filter_out_terms
+        self.filter_include_terms_list = filter_include_terms
 
-filter_out = regex_filter("advertisement|podcast")
-filter_include = inverse(land(regex_filter("coral"), regex_filter("climate")))
+    def run_crawler(self):
+        filter_out_terms = "|".join(self.filter_out_terms_list)
+        filter_out = regex_filter(filter_out_terms)
 
-# printed in this order so it's easy to scan headlines but scroll up to read more if you want
-for article in crawler.crawl(max_articles=10, url_filter=lor(filter_out, filter_include)):
-    print(article.authors)
-    print(article.body)
-    print("\n")
-    print(article.title)
-    print(article.publishing_date)
-    print(article.html.requested_url)
-    print("-"*20)
+        filter_include_terms = [regex_filter(term) for term in self.filter_include_terms_list]
+        filter_include = inverse(land(*filter_include_terms))
+
+        for article in self.crawler.crawl(max_articles=self.max_articles, url_filter=lor(filter_out, filter_include)):
+            display1(article)
