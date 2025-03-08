@@ -23,3 +23,5 @@ class BaseCrawler(ABC):
             elif self.max_articles:
                 print("\n(Skipping display of older article.)")
                 print_divider()
+            else:
+                print(".")
