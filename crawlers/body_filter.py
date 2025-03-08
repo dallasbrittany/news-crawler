@@ -1,6 +1,6 @@
 from typing import Dict, List, Any
-from searches.base_crawler import BaseCrawler
-from searches.helpers import print_divider
+from crawlers.base_crawler import BaseCrawler
+from crawlers.helpers import print_divider
 
 class BodyFilterCrawler(BaseCrawler):
     def __init__(self, sources, max_articles: int, days: int, body_search_terms: List[str]):

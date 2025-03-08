@@ -3,11 +3,11 @@
 Very simple usage of `fundus` for news crawling. If it ends up being helpful, maybe it'll get expanded later.
 
 - The `examples` folder contains examples from the `fundus` `README`.
-- The `searches` folder contains custom search classes that can be used from `main.py`.
+- The `crawlers` folder contains custom search classes that can be used from `main.py`.
 - `main.py` is where several options for the crawlers are specified like the search terms and where the custom search classes are called
 
 ## Usage
-- Install with `pipenv` and make sure to use Python `3.8+` for `fundus` (note that this repo specifically was built with `3.11.10`)
+- Install with `pipenv` and make sure to use Python `3.8+` for `fundus` (note that this repo specifically was built with `3.11.10`) -- see bottom of this file for some tips
 - To use see usage, call run `main.py` and see something like this:
 ```
 usage: main.py [-h] [--max_articles MAX_ARTICLES] [--days_back DAYS_BACK] [--include INCLUDE [INCLUDE ...]]
@@ -48,3 +48,17 @@ python main.py url --include technology --exclude AI
 - [fundus](https://github.com/flairNLP/fundus)
 
 > NOTE: Fundus' filters work inversely to Python's built-in filter. A filter in Fundus describes what is filtered out and not what's kept. If a filter returns True on a specific element the element will be dropped.
+
+### Python
+
+Before running, get the virtual environment ready:
+```
+pipenv --python $(pyenv which python)
+pipenv shell
+pipenv install
+```
+
+To remove the virtual environment:
+```
+pipenv --rm
+```

@@ -2,7 +2,7 @@ from typing import Dict, Any
 from abc import ABC, abstractmethod
 import datetime
 from fundus import Crawler, PublisherCollection, Sitemap
-from searches.helpers import display, print_divider
+from crawlers.helpers import display, print_divider
 
 class BaseCrawler(ABC):
     def __init__(self, sources, max_articles: int, days: int):

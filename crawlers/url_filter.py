@@ -1,7 +1,7 @@
 from typing import Dict, Any, List
 from fundus.scraping.filter import inverse, regex_filter, lor, land
-from searches.base_crawler import BaseCrawler
-from searches.helpers import display, print_divider
+from crawlers.base_crawler import BaseCrawler
+from crawlers.helpers import display, print_divider
 
 class UrlFilterCrawler(BaseCrawler):
     def __init__(self, sources, max_articles: int, days: int, filter_include_terms: List[str], filter_out_terms: List[str]):

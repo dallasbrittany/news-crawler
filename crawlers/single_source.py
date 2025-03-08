@@ -1,5 +1,5 @@
 from typing import Dict, Any
-from searches.base_crawler import BaseCrawler
+from crawlers.base_crawler import BaseCrawler
 
 class SingleSourceCrawler(BaseCrawler):
     def __init__(self, source, max_articles: int, days: int):

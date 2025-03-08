@@ -1,6 +1,6 @@
 import argparse
 from fundus import PublisherCollection
-from searches import BodyFilterCrawler, UrlFilterCrawler, SingleSourceCrawler
+from crawlers import BodyFilterCrawler, UrlFilterCrawler, SingleSourceCrawler
 
 def print_include_not_implemented():
     print("Provided included keywords will be ignored, as that feature is not implemented yet for this type of search.")
