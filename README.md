@@ -12,6 +12,8 @@ Very simple usage of `fundus` for news crawling. If it ends up being helpful, ma
 - To use UrlFilterCrawler, call `python main.py url`.
 
 ## Future Work
+- Structure things better
+- Handle errors gracefully like `lxml.etree.ParserError: Document is empty`
 - Get the filters to combine better with body filter and date
 - Make some more useful preset searches like daily essential news or favorite subjects
 - It'd be nice if it saved things rather than just displayed them in the terminal
