@@ -4,15 +4,22 @@ Very simple usage of `fundus` for news crawling. If it ends up being helpful, ma
 
 - The `examples` folder contains examples from the `fundus` `README`.
 - The `searches` folder contains custom search classes that can be used from `main.py`.
-- `main.py` is where several options for the crawlers are specified like the search terms
+- `main.py` is where several options for the crawlers are specified like the search terms and where the custom search classes are called
 
 ## Usage
 - Install with `pipenv` and make sure to use Python `3.8+` for `fundus` (note that this repo specifically was built with `3.11.10`)
-- To use BodyFilterCrawler, call `python main.py filter`.
-- To use UrlFilterCrawler, call `python main.py url`.
+- To use see usage, call run `main.py` and see something like this:
+```
+usage: main.py [-h] [--max_articles MAX_ARTICLES] [--days_back DAYS_BACK] {body,url,ny,guardian}
+```
+
+- For example, to see 10 articles from the Guardian that are from the last 2 days:
+```
+python main.py guardian --max_articles 10 --days_back 2
+```
 
 ## Future Work
-- Structure things better
+- General code improvements
 - Handle errors gracefully like `lxml.etree.ParserError: Document is empty`
 - Get the filters to combine better with body filter and date
 - Make some more useful preset searches like daily essential news or favorite subjects
