@@ -1,3 +1,6 @@
+# Warnings
+
+
 def print_include_not_implemented():
     print(
         "Provided included keywords will be ignored, as that feature is not implemented yet for this type of search.\n"
@@ -14,7 +17,7 @@ def print_divider():
     print("-" * 20)
 
 
-# These are simple ways to display the article so it is easy to see a summary but also go back and read the entire body when needed
+# The following are simple ways to display the article so it is easy to see a summary but also go back and read the entire body when needed
 
 
 def display(article):

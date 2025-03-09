@@ -11,18 +11,30 @@ class BaseCrawler(ABC):
         self.crawler = Crawler(*sources)
         self.max_articles = max_articles
         self.days = days
-        self.end_date = datetime.date.today() - datetime.timedelta(days=days)
+        self.start_date = datetime.date.today() - datetime.timedelta(days=days)
+        # TODO: Allow end date to be passed in instead of assuming it's today
 
     @abstractmethod
     def get_filter_params(self) -> Dict[str, Any]:
         pass
+
+    def publishing_date_filter(self, extracted: Dict[str, Any]) -> bool:
+        end_date = datetime.date.today() - datetime.timedelta(
+            days=0
+        )  # TODO: allowing a range of dates instead of forcing to end today would be nice
+        start_date = end_date - datetime.timedelta(days=self.days)
+        if publishing_date := extracted.get("publishing_date"):
+            return not (start_date <= publishing_date.date() <= end_date)
+        return True
 
     def run_crawler(self):
         filter_params = self.get_filter_params()
         for article in self.crawler.crawl(
             max_articles=self.max_articles, **filter_params
         ):
-            if article.publishing_date.date() > self.end_date:
+            # URL filters don't check date because they only look at the URLs, so it's done here instead, which isn't ideal
+            # But body filter does check date in advance, so this check is redundant for body filter
+            if article.publishing_date.date() >= self.start_date:
                 display(article)
             elif self.max_articles:
                 print("\n(Skipping display of older article.)")

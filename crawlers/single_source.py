@@ -7,7 +7,7 @@ class SingleSourceCrawler(BaseCrawler):
         super().__init__(source, max_articles, days)
 
     def get_filter_params(self) -> Dict[str, Any]:
-        return {}
+        return {"only_complete": self.publishing_date_filter}
 
     def run_crawler(self):
         super().run_crawler()

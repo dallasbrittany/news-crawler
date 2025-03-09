@@ -1,4 +1,5 @@
 from typing import Dict, List, Any
+from fundus.scraping.filter import inverse, regex_filter, lor, land
 from crawlers.base_crawler import BaseCrawler
 from crawlers.helpers import print_divider
 
@@ -18,7 +19,7 @@ class BodyFilterCrawler(BaseCrawler):
         return True
 
     def get_filter_params(self) -> Dict[str, Any]:
-        return {"only_complete": self.body_filter}
+        return {"only_complete": lor(self.publishing_date_filter, self.body_filter)}
 
     def run_crawler(self):
         print("body search terms", self.body_search_terms)

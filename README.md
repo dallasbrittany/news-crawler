@@ -33,16 +33,21 @@ python main.py url --include technology --exclude AI
 ```
 
 ## Future Work
-- General code improvements
+- Add API support
+- Add end_date as option to pass in (and rename days_back to start_date)
+- Confirm if the example provided for date filter is actually wrong and if so open a PR in their repo
+- Allow passing in the sources instead of ever hard-coding them
 - More options for search (like filtering with a single source)
 - Handle errors gracefully like `lxml.etree.ParserError: Document is empty`
-- Get the filters to combine better with body filter and date
+- It's matching on part of words (so `threefold` matches `reef`), which isn't helpful in many cases
 - Make some more useful preset searches like daily essential news or favorite subjects
 - It'd be nice if it saved things rather than just displayed them in the terminal
 - It'd be nice to have a UI
 - Testing that isn't manual
 - Sentiment analysis would be really useful
 - Making it work properly with news in other languages would be nice
+- Improve date filtering when doing URL search
+- General code improvements
 
 ## Resources
 - [fundus](https://github.com/flairNLP/fundus)
