@@ -4,12 +4,10 @@ from typing import Dict, Any
 from fundus import Crawler, PublisherCollection
 
 
-# only select articles from the past seven days
+# only select articles that are >= 1 week old but <= 3 weeks old
 def date_filter(extracted: Dict[str, Any]) -> bool:
-    end_date = datetime.date.today() - datetime.timedelta(
-        weeks=1
-    )  # NOTE: Shouldn't it be weeks=0? For days, it's days=0 to select today
-    start_date = end_date - datetime.timedelta(weeks=1)
+    end_date = datetime.date.today() - datetime.timedelta(weeks=1)
+    start_date = end_date - datetime.timedelta(weeks=2)
     if publishing_date := extracted.get("publishing_date"):
         return not (start_date <= publishing_date.date() <= end_date)
     return True

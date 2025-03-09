@@ -35,7 +35,6 @@ python main.py url --include technology --exclude AI
 ## Future Work
 - Add API support
 - Add end_date as option to pass in (and rename days_back to start_date)
-- Confirm if the example provided for date filter is actually wrong and if so open a PR in their repo
 - Allow passing in the sources instead of ever hard-coding them
 - More options for search (like filtering with a single source)
 - Handle errors gracefully like `lxml.etree.ParserError: Document is empty`
