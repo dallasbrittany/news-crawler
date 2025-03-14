@@ -30,6 +30,77 @@ class TimeoutError(CrawlerError):
     pass
 
 
+def format_sources(sources_list):
+    """Format sources list in a readable way, grouped by region."""
+    us_sources = []
+    uk_sources = []
+    au_sources = []
+    ca_sources = []
+    unknown_sources = []
+
+    # print(f"DEBUG: Received {len(sources_list)} sources to format")
+    for source in sources_list:
+        # print(f"DEBUG: Processing source: {source}")
+
+        # Handle collection objects (like PublisherCollection.us)
+        if isinstance(source, type(PublisherCollection.us)):
+            # Extract all publishers from the collection
+            for name, publisher in vars(source).items():
+                if not name.startswith("__"):  # Skip Python special attributes
+                    if hasattr(publisher, "name"):
+                        # print(f"DEBUG: Found publisher in collection: {publisher.name}")
+                        # Add to appropriate region list based on collection
+                        if source == PublisherCollection.us:
+                            us_sources.append(publisher.name)
+                        elif source == PublisherCollection.uk:
+                            uk_sources.append(publisher.name)
+                        elif source == PublisherCollection.au:
+                            au_sources.append(publisher.name)
+                        elif source == PublisherCollection.ca:
+                            ca_sources.append(publisher.name)
+            continue
+
+        # Handle individual publisher objects
+        source_name = getattr(source, "name", None)
+        if source_name:
+            # print(f"DEBUG: Source has name: {source_name}")
+            # Check which collection it belongs to
+            if hasattr(PublisherCollection.us, source_name):
+                us_sources.append(source_name)
+            elif hasattr(PublisherCollection.uk, source_name):
+                uk_sources.append(source_name)
+            elif hasattr(PublisherCollection.au, source_name):
+                au_sources.append(source_name)
+            elif hasattr(PublisherCollection.ca, source_name):
+                ca_sources.append(source_name)
+            else:
+                unknown_sources.append(source_name)
+        else:
+            print(
+                f"DEBUG: Source has no name attribute and is not a collection, using str: {str(source)}"
+            )
+            unknown_sources.append(str(source))
+
+    output = []
+    if us_sources:
+        output.append(f"US ({len(us_sources)}): {', '.join(sorted(us_sources))}")
+    if uk_sources:
+        output.append(f"UK ({len(uk_sources)}): {', '.join(sorted(uk_sources))}")
+    if au_sources:
+        output.append(f"AU ({len(au_sources)}): {', '.join(sorted(au_sources))}")
+    if ca_sources:
+        output.append(f"CA ({len(ca_sources)}): {', '.join(sorted(ca_sources))}")
+    if unknown_sources:
+        output.append(
+            f"Unknown ({len(unknown_sources)}): {', '.join(sorted(unknown_sources))}"
+        )
+
+    if not output:
+        output.append("No sources found!")
+
+    return "\n".join(output)
+
+
 class BaseCrawler(ABC):
     def __init__(
         self,
@@ -49,15 +120,17 @@ class BaseCrawler(ABC):
         sources_list = (
             [sources] if not isinstance(sources, (list, tuple)) else list(sources)
         )
-        print(
-            f"BaseCrawler received sources: {[s.name if hasattr(s, 'name') else str(s) for s in sources_list]}"
-        )
+        print("\nProcessing crawler initialization...")
+        # print(f"Source input type: {type(sources)}")
+        formatted_sources = format_sources(sources_list)
+        if formatted_sources:
+            print("\nInitialized crawler with sources:")
+            print(formatted_sources)
+        else:
+            print("\nWARNING: No valid sources found during initialization")
 
         # NOTE: adding restrict_sources_to=[Sitemap] makes The Guardian not work
         self.crawler = Crawler(sources_list)
-        print(
-            f"Initialized crawler with sources: {[s.name if hasattr(s, 'name') else str(s) for s in sources_list]}"
-        )
 
         self.max_articles = max_articles
         self.days = days
@@ -91,7 +164,7 @@ class BaseCrawler(ABC):
         if self.timeout_seconds:
             signal.signal(signal.SIGALRM, timeout_handler)
             signal.alarm(self.timeout_seconds)
-            print(f"Set crawler timeout alarm for {self.timeout_seconds} seconds")
+            print(f"Set crawler timeout for {self.timeout_seconds} seconds")
 
         try:
             article_iterator = self.crawler.crawl(
@@ -145,6 +218,21 @@ class BaseCrawler(ABC):
                     if display_output:
                         print(f"\nSkipping article due to missing attribute: {str(e)}")
                     continue
+                except TimeoutError as e:
+                    if str(e) == "Crawler operation timed out":
+                        # This is our intentional timeout, handle it gracefully
+                        elapsed_time = time.time() - start_time
+                        if display_output:
+                            print(
+                                f"\nTimeout reached after {elapsed_time:.1f} seconds (limit was {self.timeout_seconds} seconds). Returning {len(articles)} articles collected so far."
+                            )
+                            print_divider()
+                        return articles
+                    else:
+                        # This is an unexpected timeout error
+                        if display_output:
+                            print(f"\nUnexpected timeout error: {str(e)}")
+                        raise
                 except Exception as e:
                     if display_output:
                         print(
@@ -152,14 +240,21 @@ class BaseCrawler(ABC):
                         )
                     continue
 
-        except TimeoutError:
-            elapsed_time = time.time() - start_time
-            if display_output:
-                print(
-                    f"\nTimeout reached after {elapsed_time:.1f} seconds (limit was {self.timeout_seconds} seconds). Returning {len(articles)} articles collected so far."
-                )
-                print_divider()
-            return articles
+        except TimeoutError as e:
+            if str(e) == "Crawler operation timed out":
+                # This is our intentional timeout, handle it gracefully
+                elapsed_time = time.time() - start_time
+                if display_output:
+                    print(
+                        f"\nTimeout reached after {elapsed_time:.1f} seconds (limit was {self.timeout_seconds} seconds). Returning {len(articles)} articles collected so far."
+                    )
+                    print_divider()
+                return articles
+            else:
+                # This is an unexpected timeout error
+                if display_output:
+                    print(f"\nUnexpected timeout error: {str(e)}")
+                raise
 
         except Exception as e:
             if display_output:

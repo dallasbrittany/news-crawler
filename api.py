@@ -5,10 +5,6 @@ import datetime
 from fundus import PublisherCollection, Article
 from crawlers import BodyFilterCrawler, UrlFilterCrawler
 from crawlers.base_crawler import CrawlerError, NetworkError, TimeoutError
-from crawlers.helpers import (
-    print_include_not_implemented,
-    print_exclude_not_implemented,
-)
 
 app = FastAPI(
     title="News Crawler API",
@@ -154,6 +150,93 @@ def get_sources(source_names: Optional[List[str]] = None):
     return sources
 
 
+def parse_sources(
+    sources_param: Optional[str], params_sources: Optional[List[str]]
+) -> Optional[List[str]]:
+    """Parse sources from either comma-separated string or params list."""
+    if sources_param:
+        return [s.strip() for s in sources_param.split(",")]
+    return params_sources
+
+
+async def handle_crawler_request(
+    params: CrawlerParams,
+    keywords_include: Optional[List[str]],
+    keywords_exclude: Optional[List[str]],
+    sources: Optional[str],
+    crawler_class,
+    default_include_terms: List[str],
+    default_exclude_terms: Optional[List[str]] = None,
+) -> CrawlerResponse:
+    """Handle common crawler request logic for both body and URL endpoints."""
+    try:
+        print(f"API received timeout parameter: {params.timeout} seconds")
+
+        # Parse and validate sources
+        sources_list = parse_sources(sources, params.sources)
+        sources = get_sources(sources_list)
+
+        # Set up search terms
+        include_terms = keywords_include if keywords_include else default_include_terms
+        exclude_terms = (
+            keywords_exclude if keywords_exclude else (default_exclude_terms or [])
+        )
+
+        print(f"Creating crawler with timeout: {params.timeout} seconds")
+        if crawler_class == UrlFilterCrawler:
+            crawler = crawler_class(
+                sources,
+                params.max_articles,
+                params.days_back,
+                include_terms,
+                exclude_terms,
+                timeout_seconds=params.timeout,
+            )
+        else:  # BodyFilterCrawler
+            crawler = crawler_class(
+                sources,
+                params.max_articles,
+                params.days_back,
+                include_terms,
+                timeout_seconds=params.timeout,
+            )
+
+        # Run crawler with appropriate display settings
+        display_output = (
+            crawler_class == BodyFilterCrawler
+        )  # Only show output for body crawler
+        articles = crawler.run_crawler(
+            display_output=display_output,
+            show_body=False,  # Don't show article bodies in API mode
+        )
+        print(f"Crawler returned {len(articles)} articles")
+
+        # Process articles
+        processed_articles = []
+        for i, article in enumerate(articles):
+            try:
+                processed_article = article_to_dict(article)
+                processed_articles.append(processed_article)
+            except Exception as e:
+                print(f"Error processing article {i}: {type(e).__name__}: {str(e)}")
+                continue
+
+        return CrawlerResponse(
+            message=f"{crawler_class.__name__} completed with {len(processed_articles)} articles found",
+            articles=processed_articles,
+        )
+
+    except Exception as e:
+        print(f"Error in crawler request: {type(e).__name__}: {str(e)}")
+        if isinstance(e, (AttributeError, TypeError)):
+            raise HTTPException(
+                status_code=422, detail=f"Error processing article data: {str(e)}"
+            )
+        if isinstance(e, ValueError):
+            raise HTTPException(status_code=400, detail=str(e))
+        return handle_crawler_error(e)
+
+
 @app.get("/crawl/body", response_model=CrawlerResponse)
 async def crawl_body(
     params: CrawlerParams = Depends(),
@@ -168,62 +251,22 @@ async def crawl_body(
         description="Comma-separated list of sources to crawl (e.g., 'TheNewYorker,TheGuardian'). If not specified, uses all sources",
     ),
 ):
-    try:
-        print(f"API received timeout parameter: {params.timeout} seconds")
-        # Parse comma-separated sources if provided
-        sources_list = None
-        if sources:
-            sources_list = [s.strip() for s in sources.split(",")]
-
-        # Use sources from query param if provided, otherwise use from params
-        sources_to_use = sources_list if sources_list is not None else params.sources
-        sources = get_sources(sources_to_use)
-        terms_default = [
-            "pollution",
-            "environmental",
-            "climate crisis",
-            "EPA",
-            "coral",
-            "reef",
-        ]
-        body_search_terms = keywords_include if keywords_include else terms_default
-
-        print(f"Creating crawler with timeout: {params.timeout} seconds")
-        crawler = BodyFilterCrawler(
-            sources,
-            params.max_articles,
-            params.days_back,
-            body_search_terms,
-            timeout_seconds=params.timeout,
-        )
-        articles = crawler.run_crawler(
-            display_output=True,  # Enable display output temporarily for debugging
-            show_body=False,  # Don't show article bodies in API mode
-        )
-        print(f"Crawler returned {len(articles)} articles")
-
-        processed_articles = []
-        for i, article in enumerate(articles):
-            try:
-                processed_article = article_to_dict(article)
-                processed_articles.append(processed_article)
-            except Exception as e:
-                print(f"Error processing article {i}: {type(e).__name__}: {str(e)}")
-                continue
-
-        return CrawlerResponse(
-            message=f"Body crawler completed with {len(processed_articles)} articles found",
-            articles=processed_articles,
-        )
-    except Exception as e:
-        print(f"Error in crawl_body: {type(e).__name__}: {str(e)}")
-        if isinstance(e, (AttributeError, TypeError)):
-            raise HTTPException(
-                status_code=422, detail=f"Error processing article data: {str(e)}"
-            )
-        if isinstance(e, ValueError):
-            raise HTTPException(status_code=400, detail=str(e))
-        return handle_crawler_error(e)
+    default_terms = [
+        "pollution",
+        "environmental",
+        "climate crisis",
+        "EPA",
+        "coral",
+        "reef",
+    ]
+    return await handle_crawler_request(
+        params,
+        keywords_include,
+        keywords_exclude,
+        sources,
+        BodyFilterCrawler,
+        default_terms,
+    )
 
 
 @app.get("/crawl/url", response_model=CrawlerResponse)
@@ -240,38 +283,12 @@ async def crawl_url(
         description="Comma-separated list of sources to crawl (e.g., 'TheNewYorker,TheGuardian'). If not specified, uses all sources",
     ),
 ):
-    try:
-        # Parse comma-separated sources if provided
-        sources_list = None
-        if sources:
-            sources_list = [s.strip() for s in sources.split(",")]
-
-        # Use sources from query param if provided, otherwise use from params
-        sources_to_use = sources_list if sources_list is not None else params.sources
-        sources = get_sources(sources_to_use)
-        required_terms_default = ["coral", "climate"]
-        required_terms = (
-            keywords_include if keywords_include else required_terms_default
-        )
-
-        filter_out_terms_default = ["advertisement", "podcast"]
-        filter_out_terms = (
-            keywords_exclude if keywords_exclude else filter_out_terms_default
-        )
-
-        crawler = UrlFilterCrawler(
-            sources,
-            params.max_articles,
-            params.days_back,
-            required_terms,
-            filter_out_terms,
-            timeout_seconds=params.timeout,
-        )
-        articles = crawler.run_crawler(display_output=False)
-
-        return CrawlerResponse(
-            message=f"URL crawler completed with {len(articles)} articles found",
-            articles=[article_to_dict(article) for article in articles],
-        )
-    except Exception as e:
-        return handle_crawler_error(e)
+    return await handle_crawler_request(
+        params,
+        keywords_include,
+        keywords_exclude,
+        sources,
+        UrlFilterCrawler,
+        ["coral", "climate"],
+        ["advertisement", "podcast"],
+    )

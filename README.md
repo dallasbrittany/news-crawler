@@ -93,8 +93,8 @@ curl "http://localhost:8000/crawl/body?sources=TheGuardian,TheNewYorker,NineNews
 ```
 
 ## Future Work
+- General code improvements and find anything weird introduced by AI that might have been missed
 - Add end_date as option to pass in (and rename days_back to start_date)
-- Handle errors gracefully like `lxml.etree.ParserError: Document is empty`
 - It's matching on part of words (so `threefold` matches `reef`), which isn't helpful in many cases
 - Make some more useful preset searches like daily essential news or favorite subjects
 - It'd be nice if it saved things rather than just displayed them in the terminal
@@ -103,7 +103,6 @@ curl "http://localhost:8000/crawl/body?sources=TheGuardian,TheNewYorker,NineNews
 - Sentiment analysis would be really useful
 - Making it work properly with news in other languages would be nice
 - Improve date filtering when doing URL search
-- General code improvements
 
 ## Resources
 - [fundus](https://github.com/flairNLP/fundus) and [fundus supported publishers](https://github.com/flairNLP/fundus/blob/master/docs/supported_publishers.md)
