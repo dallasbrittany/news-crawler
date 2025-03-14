@@ -1,4 +1,5 @@
 import argparse
+import uvicorn
 from fundus import PublisherCollection
 from crawlers import BodyFilterCrawler, UrlFilterCrawler, SingleSourceCrawler
 from crawlers.helpers import (
@@ -82,7 +83,12 @@ def main(
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="Run the news crawler.")
     parser.add_argument(
-        "crawler",
+        "mode",
+        choices=["cli", "api"],
+        help="Run in CLI mode or start the API server",
+    )
+    parser.add_argument(
+        "--crawler",
         choices=["body", "url", "ny", "guardian"],
         help="The type of crawler to use (body, url, ny, or guardian)",
     )
@@ -104,5 +110,26 @@ if __name__ == "__main__":
     parser.add_argument(
         "--exclude", nargs="+", help="List of keywords to exclude from the search"
     )
+    parser.add_argument(
+        "--host",
+        default="127.0.0.1",
+        help="Host to run the API server on (default: 127.0.0.1)",
+    )
+    parser.add_argument(
+        "--port",
+        type=int,
+        default=8000,
+        help="Port to run the API server on (default: 8000)",
+    )
+
     args = parser.parse_args()
-    main(args.crawler, args.max_articles, args.days_back, args.include, args.exclude)
+
+    if args.mode == "cli":
+        if not args.crawler:
+            parser.error("CLI mode requires --crawler argument")
+        main(args.crawler, args.max_articles, args.days_back, args.include, args.exclude)
+    else:  # api mode
+        from api import app
+        print(f"Starting API server on {args.host}:{args.port}")
+        print("API documentation available at http://127.0.0.1:8000/docs")
+        uvicorn.run(app, host=args.host, port=args.port)

@@ -8,32 +8,60 @@ Very simple usage of `fundus` for news crawling. If it ends up being helpful, ma
 
 ## Usage
 - Install with `pipenv` and make sure to use Python `3.8+` for `fundus` (note that this repo specifically was built with `3.11.10`) -- see bottom of this file for some tips
-- To use see usage, call run `main.py` and see something like this:
+- The crawler can be run in two modes: CLI or API. To see usage, run `main.py` and see something like this:
 ```
-usage: main.py [-h] [--max_articles MAX_ARTICLES] [--days_back DAYS_BACK] [--include INCLUDE [INCLUDE ...]]
-               [--exclude EXCLUDE [EXCLUDE ...]]
-               {body,url,ny,guardian}
+usage: main.py [-h] {cli,api} [--crawler {body,url,ny,guardian}] [--max_articles MAX_ARTICLES]
+               [--days_back DAYS_BACK] [--include INCLUDE [INCLUDE ...]]
+               [--exclude EXCLUDE [EXCLUDE ...]] [--host HOST] [--port PORT]
 ```
 
-- For example, to see 10 articles from the Guardian that are from the last 2 days:
+### CLI Mode
+For example, to see 10 articles from the Guardian that are from the last 2 days:
 ```
-python main.py guardian --max_articles 10 --days_back 2
+python main.py cli --crawler guardian --max_articles 10 --days_back 2
 ```
 
 Or to specify your own search terms for the body of articles in US and UK news sources with defaults for max articles and days back:
 
 ```
-python main.py body --include AI technology
+python main.py cli --crawler body --include AI technology
 ```
 
 Or to specify technology but not AI in the URL (with the rest of the settings being defaults):
 
 ```
-python main.py url --include technology --exclude AI
+python main.py cli --crawler url --include technology --exclude AI
+```
+
+### API Mode
+The crawler can also be run as an API server that provides the same functionality through HTTP endpoints:
+
+```bash
+# Start API server with default settings (localhost:8000)
+python main.py api
+
+# Start API server with custom host and port
+python main.py api --host 0.0.0.0 --port 8080
+```
+
+The API documentation will be available at `http://localhost:8000/docs` when the server is running.
+
+Available endpoints:
+- `/crawl/body` - Search articles by body content
+- `/crawl/url` - Search articles by URL patterns
+- `/crawl/ny` - Get articles from The New Yorker
+- `/crawl/guardian` - Get articles from The Guardian
+
+Example API calls:
+```bash
+# Get articles with specific keywords in body
+curl "http://localhost:8000/crawl/body?max_articles=5&keywords_include=climate&keywords_include=pollution"
+
+# Get articles with specific URL patterns
+curl "http://localhost:8000/crawl/url?max_articles=10&keywords_include=technology&keywords_exclude=AI"
 ```
 
 ## Future Work
-- Add API support
 - Add end_date as option to pass in (and rename days_back to start_date)
 - Allow passing in the sources instead of ever hard-coding them
 - More options for search (like filtering with a single source)

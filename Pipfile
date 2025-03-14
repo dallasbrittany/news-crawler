@@ -5,6 +5,9 @@ name = "pypi"
 
 [packages]
 fundus = "*"
+fastapi = "*"
+uvicorn = "*"
+pydantic = "*"
 
 [dev-packages]
 
