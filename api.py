@@ -37,7 +37,7 @@ class CrawlerParams(BaseModel):
     )
     days_back: int = Field(7, ge=1, description="Number of days back to search")
     timeout: Optional[int] = Field(
-        None, ge=1, description="Maximum number of seconds to run the query"
+        25, ge=1, description="Maximum number of seconds to run the query (default: 25)"
     )
     sources: Optional[List[str]] = Field(
         None,
