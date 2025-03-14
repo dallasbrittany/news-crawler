@@ -148,3 +148,29 @@ black --check .
 # Show the changes that would be made without applying them
 black --diff .
 ```
+
+### Running Tests
+To run the tests:
+
+```bash
+# Install test dependencies
+pipenv install --dev pytest pytest-cov
+
+# Run all tests
+python -m pytest
+
+# Run tests with coverage report
+python -m pytest --cov=.
+
+# Run specific test file
+python -m pytest tests/test_crawlers.py
+
+# Run tests with verbose output
+python -m pytest -v
+```
+
+The test suite includes:
+- Unit tests for crawler classes (timeout handling, filtering logic)
+- API endpoint tests (parameter validation, response handling)
+- Parameter validation tests
+- Error handling tests

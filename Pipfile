@@ -11,6 +11,9 @@ pydantic = "*"
 
 [dev-packages]
 black = "*"
+pytest = "*"
+pytest-cov = "*"
+httpx = "*"
 
 [requires]
 python_version = "3.11"
