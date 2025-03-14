@@ -17,22 +17,17 @@ usage: main.py [-h] {cli,api} [--crawler {body,url}] [--max_articles MAX_ARTICLE
 ```
 
 ### CLI Mode
-For example, to search for environmental articles from The Guardian in the last 2 days:
+For example, to search for environmental articles from The Guardian in the last 2 days (using multiple keywords with OR logic):
 ```
 python main.py cli --crawler body --max_articles 10 --days_back 2 --sources TheGuardian --include pollution environmental "climate crisis" EPA coral reef
 ```
 
-Or to search multiple sources for articles about climate change:
+Or to search for Apple technology articles (both words must be found) but exclude AI-related ones using URL filtering:
 ```
-python main.py cli --crawler body --sources TheGuardian TheNewYorker --include climate change
-```
-
-Or to search for technology articles but exclude AI-related ones using URL filtering:
-```
-python main.py cli --crawler url --include technology --exclude AI
+python main.py cli --crawler url --include Apple technology --exclude AI
 ```
 
-You can also set a timeout to limit how long the crawler runs:
+You can also set a timeout to limit how long the crawler runs (returns partial results collected so far):
 ```
 python main.py cli --crawler body --include climate --timeout 30  # Stop after 30 seconds
 ```
@@ -44,7 +39,7 @@ Optional arguments:
 - `--max_articles`: Maximum number of articles to retrieve (default: unlimited)
 - `--days_back`: Number of days back to search (default: 7)
 - `--exclude`: List of keywords to exclude from the search (only works with URL crawler)
-- `--timeout`: Maximum number of seconds to run the query (optional, no default timeout)
+- `--timeout`: Maximum number of seconds to run the query (optional, no default timeout). When reached, returns articles collected up to that point.
 - `--sources`: List of news sources to crawl (e.g., TheNewYorker, TheGuardian). If not specified, uses all US, UK, Australian, and Canadian sources
 
 ### API Mode
@@ -65,32 +60,43 @@ Available endpoints:
 - `/crawl/url` - Search articles by URL patterns
 
 Required parameters:
-- `keywords_include`: Keywords to include in search (required for both endpoints)
+- `keywords_include`: Keywords to include in search (required). Can be provided either as multiple parameters or comma-separated values.
 
 Optional parameters:
 - `max_articles`: Maximum number of articles to retrieve (optional)
 - `days_back`: Days to look back (default: 7)
 - `keywords_exclude`: Keywords to exclude from search (only works with /crawl/url endpoint)
-- `timeout`: Maximum number of seconds to run the query (default: 25 seconds)
+- `timeout`: Maximum number of seconds to run the query (default: 25 seconds). When reached, returns articles collected up to that point.
 - `sources`: Comma-separated list of news sources to crawl (e.g., 'TheNewYorker,TheGuardian'). If not specified, uses all US, UK, Australian, and Canadian sources
 
-Note: The API mode has a default timeout of 25 seconds to ensure responsive behavior, while the CLI mode has no default timeout. You can override the API timeout by specifying a different value in the request.
+Note: The API mode has a default timeout of 25 seconds to ensure responsive behavior, while the CLI mode has no default timeout. You can override the API timeout by specifying a different value in the request. When a timeout occurs, the API returns any articles that were successfully collected up to that point.
 
 Example API calls:
 ```bash
 # Search for articles about climate and pollution (uses default 25 second timeout)
+# Method 1: Multiple parameters
 curl "http://localhost:8000/crawl/body?max_articles=5&keywords_include=climate&keywords_include=pollution"
+
+# Method 2: Comma-separated (same result as above)
+curl "http://localhost:8000/crawl/body?max_articles=5&keywords_include=climate,pollution"
+
+# Search for environmental articles with spaces in terms (URL-encoded)
+curl "http://localhost:8000/crawl/body?sources=TheGuardian&keywords_include=environmental,climate%20crisis,coral%20reef"
 
 # Search for technology articles with a custom timeout and multiple sources
 curl "http://localhost:8000/crawl/body?sources=TheNewYorker,TheGuardian&keywords_include=technology&timeout=60"
 
-# Search for climate articles from The Guardian, excluding opinion pieces (URL filtering)
-curl "http://localhost:8000/crawl/url?sources=TheGuardian&keywords_include=climate&keywords_exclude=opinion"
+# Search for climate articles from The Guardian, excluding opinion and podcast pieces with URL filtering
+curl "http://localhost:8000/crawl/url?sources=TheGuardian&keywords_include=climate&keywords_exclude=opinion,podcast"
 ```
 
-For URL filtering, you can provide exclude terms in two ways:
-1. Multiple parameters: `keywords_exclude=opinion&keywords_exclude=podcast`
-2. Comma-separated: `keywords_exclude=opinion,podcast`
+For both `keywords_include` and `keywords_exclude` in API calls, you can provide terms in two ways:
+1. Multiple parameters: `keywords_include=term1&keywords_include=term2`
+2. Comma-separated: `keywords_include=term1,term2`
+
+For terms containing spaces:
+- In CLI mode: Use quotes (`"climate crisis"`)
+- In API mode: Use URL encoding (`climate%20crisis`)
 
 ## Future Work
 - General code improvements and find anything weird introduced by AI that might have been missed
