@@ -122,3 +122,23 @@ To remove the virtual environment:
 ```
 pipenv --rm
 ```
+
+### Code Formatting
+This project uses Black for code formatting. To format your code:
+
+```bash
+# Format all Python files in the project
+black .
+
+# Format a specific file
+black specific_file.py
+
+# Format all Python files in a specific directory
+black directory_name/
+
+# Check which files would be reformatted without making changes
+black --check .
+
+# Show the changes that would be made without applying them
+black --diff .
+```
