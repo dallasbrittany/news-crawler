@@ -11,12 +11,22 @@ from typing import Optional, List
 
 def get_sources(source_names: Optional[List[str]] = None):
     if not source_names:
-        return (PublisherCollection.us, PublisherCollection.uk)
+        return (
+            PublisherCollection.us,
+            PublisherCollection.uk,
+            PublisherCollection.au,
+            PublisherCollection.ca,
+        )
 
     # Get all sources but filter out Python's built-in attributes
     valid_sources = {
         name: source
-        for collection in [PublisherCollection.us, PublisherCollection.uk]
+        for collection in [
+            PublisherCollection.us,
+            PublisherCollection.uk,
+            PublisherCollection.au,
+            PublisherCollection.ca,
+        ]
         for name, source in vars(collection).items()
         if not name.startswith("__")
     }
@@ -35,6 +45,10 @@ def get_sources(source_names: Optional[List[str]] = None):
             sources.append(getattr(PublisherCollection.us, name))
         elif hasattr(PublisherCollection.uk, name):
             sources.append(getattr(PublisherCollection.uk, name))
+        elif hasattr(PublisherCollection.au, name):
+            sources.append(getattr(PublisherCollection.au, name))
+        elif hasattr(PublisherCollection.ca, name):
+            sources.append(getattr(PublisherCollection.ca, name))
     return tuple(sources)
 
 
@@ -54,7 +68,9 @@ def main(
     )
     timeout_str = f" with a timeout of {timeout} seconds" if timeout else ""
     sources_str = (
-        f" from {', '.join(sources)}" if sources else " from all US and UK sources"
+        f" from {', '.join(sources)}"
+        if sources
+        else " from all US, UK, Australian, and Canadian sources"
     )
     print(
         f"Using {crawler} crawler for search{sources_str}{max_str} and going {days_back} day(s) back{timeout_str}.\n"

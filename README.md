@@ -27,7 +27,7 @@ Or to specify multiple sources:
 python main.py cli --crawler body --sources TheGuardian TheNewYorker --include climate
 ```
 
-Or to specify your own search terms for the body of articles in US and UK news sources with defaults for max articles and days back:
+Or to specify your own search terms for the body of articles in all available news publishing sources with defaults for max articles and days back:
 ```
 python main.py cli --crawler body --include AI technology
 ```
@@ -48,7 +48,7 @@ Optional arguments:
 - `--include`: List of keywords to include in the search
 - `--exclude`: List of keywords to exclude from the search
 - `--timeout`: Maximum number of seconds to run the query (optional, no default timeout)
-- `--sources`: List of news sources to crawl (e.g., TheNewYorker, TheGuardian). If not specified, uses all US and UK sources
+- `--sources`: List of news sources to crawl (e.g., TheNewYorker, TheGuardian). If not specified, uses all US, UK, Australian, and Canadian sources
 
 ### API Mode
 The crawler can also be run as an API server that provides the same functionality through HTTP endpoints:
@@ -73,7 +73,7 @@ Each endpoint supports the following query parameters:
 - `keywords_include`: Keywords to include in search
 - `keywords_exclude`: Keywords to exclude from search
 - `timeout`: Maximum number of seconds to run the query (default: 25 seconds)
-- `sources`: List of news sources to crawl (e.g., TheNewYorker, TheGuardian). If not specified, uses all US and UK sources
+- `sources`: List of news sources to crawl (e.g., TheNewYorker, TheGuardian). If not specified, uses all US, UK, Australian, and Canadian sources
 
 Note: The API mode has a default timeout of 25 seconds to ensure responsive behavior, while the CLI mode has no default timeout. You can override the API timeout by specifying a different value in the request.
 

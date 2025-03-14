@@ -41,7 +41,7 @@ class CrawlerParams(BaseModel):
     )
     sources: Optional[List[str]] = Field(
         None,
-        description="List of sources to crawl (e.g., ['TheNewYorker', 'TheGuardian']). If not specified, uses all US and UK sources",
+        description="List of sources to crawl (e.g., ['TheNewYorker', 'TheGuardian']). If not specified, uses all US, UK, Australian, and Canadian sources",
     )
 
     @field_validator("days_back")
@@ -54,7 +54,12 @@ class CrawlerParams(BaseModel):
     def validate_sources(cls, v):
         if not v:
             return None
-        valid_sources = {**vars(PublisherCollection.us), **vars(PublisherCollection.uk)}
+        valid_sources = {
+            **vars(PublisherCollection.us),
+            **vars(PublisherCollection.uk),
+            **vars(PublisherCollection.au),
+            **vars(PublisherCollection.ca),
+        }
         for source in v:
             if source not in valid_sources:
                 raise ValueError(
@@ -91,7 +96,12 @@ def article_to_dict(article: Article) -> Dict[str, Any]:
 
 def get_sources(source_names: Optional[List[str]] = None):
     if not source_names:
-        return (PublisherCollection.us, PublisherCollection.uk)
+        return (
+            PublisherCollection.us,
+            PublisherCollection.uk,
+            PublisherCollection.au,
+            PublisherCollection.ca,
+        )
 
     sources = []
     for name in source_names:
@@ -99,8 +109,19 @@ def get_sources(source_names: Optional[List[str]] = None):
             sources.append(getattr(PublisherCollection.us, name))
         elif hasattr(PublisherCollection.uk, name):
             sources.append(getattr(PublisherCollection.uk, name))
+        elif hasattr(PublisherCollection.au, name):
+            sources.append(getattr(PublisherCollection.au, name))
+        elif hasattr(PublisherCollection.ca, name):
+            sources.append(getattr(PublisherCollection.ca, name))
     return (
-        tuple(sources) if sources else (PublisherCollection.us, PublisherCollection.uk)
+        tuple(sources)
+        if sources
+        else (
+            PublisherCollection.us,
+            PublisherCollection.uk,
+            PublisherCollection.au,
+            PublisherCollection.ca,
+        )
     )
 
 
