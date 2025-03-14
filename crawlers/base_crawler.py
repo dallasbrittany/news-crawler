@@ -32,10 +32,10 @@ class TimeoutError(CrawlerError):
 
 # Constants for publisher collections
 PUBLISHER_COLLECTIONS = {
-    'US': PublisherCollection.us,
-    'UK': PublisherCollection.uk,
-    'AU': PublisherCollection.au,
-    'CA': PublisherCollection.ca,
+    "US": PublisherCollection.us,
+    "UK": PublisherCollection.uk,
+    "AU": PublisherCollection.au,
+    "CA": PublisherCollection.ca,
 }
 
 

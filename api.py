@@ -4,7 +4,12 @@ from pydantic import BaseModel, field_validator, Field
 import datetime
 from fundus import PublisherCollection, Article
 from crawlers import BodyFilterCrawler, UrlFilterCrawler
-from crawlers.base_crawler import CrawlerError, NetworkError, TimeoutError, PUBLISHER_COLLECTIONS
+from crawlers.base_crawler import (
+    CrawlerError,
+    NetworkError,
+    TimeoutError,
+    PUBLISHER_COLLECTIONS,
+)
 
 app = FastAPI(
     title="News Crawler API",
@@ -120,7 +125,11 @@ def get_sources(source_names: Optional[List[str]] = None):
         valid_sources = {}
         for collection in PUBLISHER_COLLECTIONS.values():
             valid_sources.update(
-                {name: source for name, source in vars(collection).items() if not name.startswith("__")}
+                {
+                    name: source
+                    for name, source in vars(collection).items()
+                    if not name.startswith("__")
+                }
             )
         valid_source_names = sorted(valid_sources.keys())
         raise ValueError(
