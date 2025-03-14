@@ -44,7 +44,11 @@ def main(
             print_exclude_not_implemented()
 
         crawler = BodyFilterCrawler(
-            default_sources, max_articles, days_back, body_search_terms, timeout_seconds=timeout
+            default_sources,
+            max_articles,
+            days_back,
+            body_search_terms,
+            timeout_seconds=timeout,
         )
         crawler.run_crawler()
     elif crawler == "url":
@@ -60,7 +64,12 @@ def main(
         )
 
         url_filter_crawler = UrlFilterCrawler(
-            default_sources, max_articles, days_back, required_terms, filter_out_terms, timeout_seconds=timeout
+            default_sources,
+            max_articles,
+            days_back,
+            required_terms,
+            filter_out_terms,
+            timeout_seconds=timeout,
         )
         url_filter_crawler.run_crawler()
     elif crawler == "ny":
@@ -69,7 +78,9 @@ def main(
         if keywords_exclude:
             print_exclude_not_implemented()
         source = PublisherCollection.us.TheNewYorker
-        crawler = SingleSourceCrawler([source], max_articles, days_back, timeout_seconds=timeout)
+        crawler = SingleSourceCrawler(
+            [source], max_articles, days_back, timeout_seconds=timeout
+        )
         crawler.run_crawler()
     elif crawler == "guardian":
         if keywords_include:
@@ -77,7 +88,9 @@ def main(
         if keywords_exclude:
             print_exclude_not_implemented()
         source = PublisherCollection.uk.TheGuardian
-        crawler = SingleSourceCrawler([source], max_articles, days_back, timeout_seconds=timeout)
+        crawler = SingleSourceCrawler(
+            [source], max_articles, days_back, timeout_seconds=timeout
+        )
         crawler.run_crawler()
     else:
         raise ValueError(f"Unknown crawler type: {crawler}")
@@ -136,9 +149,17 @@ if __name__ == "__main__":
     if args.mode == "cli":
         if not args.crawler:
             parser.error("CLI mode requires --crawler argument")
-        main(args.crawler, args.max_articles, args.days_back, args.include, args.exclude, args.timeout)
+        main(
+            args.crawler,
+            args.max_articles,
+            args.days_back,
+            args.include,
+            args.exclude,
+            args.timeout,
+        )
     else:  # api mode
         from api import app
+
         print(f"Starting API server on {args.host}:{args.port}")
         print("API documentation available at http://127.0.0.1:8000/docs")
         uvicorn.run(app, host=args.host, port=args.port)

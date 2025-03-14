@@ -7,7 +7,12 @@ from fundus import Article
 
 class BodyFilterCrawler(BaseCrawler):
     def __init__(
-        self, sources, max_articles: int, days: int, body_search_terms: List[str], timeout_seconds: Optional[int] = None
+        self,
+        sources,
+        max_articles: int,
+        days: int,
+        body_search_terms: List[str],
+        timeout_seconds: Optional[int] = None,
     ):
         super().__init__(sources, max_articles, days, timeout_seconds=timeout_seconds)
         self.body_search_terms = body_search_terms

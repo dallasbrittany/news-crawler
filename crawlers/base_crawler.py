@@ -2,12 +2,44 @@ from typing import Dict, Any, List, Optional
 from abc import ABC, abstractmethod
 import datetime
 import time
+import requests
 from fundus import Crawler, PublisherCollection, Sitemap, Article
 from crawlers.helpers import display, print_divider
 
 
+class CrawlerError(Exception):
+    """Base exception class for crawler errors"""
+
+    pass
+
+
+class NetworkError(CrawlerError):
+    """Raised when network-related issues occur during crawling"""
+
+    pass
+
+
+class TimeoutError(CrawlerError):
+    """Raised when crawler exceeds specified timeout"""
+
+    pass
+
+
 class BaseCrawler(ABC):
-    def __init__(self, sources, max_articles: int, days: int, timeout_seconds: Optional[int] = None):
+    def __init__(
+        self,
+        sources,
+        max_articles: int,
+        days: int,
+        timeout_seconds: Optional[int] = None,
+    ):
+        if days <= 0:
+            raise ValueError("days must be greater than 0")
+        if max_articles is not None and max_articles <= 0:
+            raise ValueError("max_articles must be greater than 0 if specified")
+        if timeout_seconds is not None and timeout_seconds <= 0:
+            raise ValueError("timeout_seconds must be greater than 0 if specified")
+
         # NOTE: adding restrict_sources_to=[Sitemap] makes The Guardian not work
         self.crawler = Crawler(*sources)
         self.max_articles = max_articles
@@ -33,28 +65,59 @@ class BaseCrawler(ABC):
         filter_params = self.get_filter_params()
         articles = []
         start_time = time.time()
+        error_count = 0
+        max_retries = 3
 
-        for article in self.crawler.crawl(
-            max_articles=self.max_articles, **filter_params
-        ):
-            # Check timeout if specified
-            if self.timeout_seconds and (time.time() - start_time) > self.timeout_seconds:
-                if display_output:
-                    print(f"\nTimeout reached after {self.timeout_seconds} seconds")
-                    print_divider()
-                break
+        try:
+            for article in self.crawler.crawl(
+                max_articles=self.max_articles, **filter_params
+            ):
+                try:
+                    # Check timeout if specified
+                    if (
+                        self.timeout_seconds
+                        and (time.time() - start_time) > self.timeout_seconds
+                    ):
+                        if display_output:
+                            print(
+                                f"\nTimeout reached after {self.timeout_seconds} seconds"
+                            )
+                            print_divider()
+                        break  # Just stop collecting articles and return what we have
 
-            # URL filters don't check date because they only look at the URLs, so it's done here instead, which isn't ideal
-            # But body filter does check date in advance, so this check is redundant for body filter
-            if article.publishing_date.date() >= self.start_date:
-                if display_output:
-                    display(article)
-                articles.append(article)
-            elif self.max_articles:
-                if display_output:
-                    print("\n(Skipping display of older article.)")
-                    print_divider()
-            else:
-                if display_output:
-                    print(".")
+                    # URL filters don't check date because they only look at the URLs, so it's done here instead
+                    if article.publishing_date.date() >= self.start_date:
+                        if display_output:
+                            display(article)
+                        articles.append(article)
+                    elif self.max_articles:
+                        if display_output:
+                            print("\n(Skipping display of older article.)")
+                            print_divider()
+                    else:
+                        if display_output:
+                            print(".")
+
+                except (
+                    requests.exceptions.RequestException,
+                    requests.exceptions.ConnectionError,
+                ) as e:
+                    error_count += 1
+                    if error_count >= max_retries:
+                        raise NetworkError(
+                            f"Network error after {max_retries} retries: {str(e)}"
+                        )
+                    if display_output:
+                        print(
+                            f"\nNetwork error encountered, retrying ({error_count}/{max_retries})..."
+                        )
+                    time.sleep(1)  # Add a small delay before retrying
+                    continue
+
+        except Exception as e:
+            if display_output:
+                print(f"\nError during crawling: {str(e)}")
+                print_divider()
+            raise
+
         return articles

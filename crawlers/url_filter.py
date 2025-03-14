@@ -13,7 +13,7 @@ class UrlFilterCrawler(BaseCrawler):
         days: int,
         filter_include_terms: List[str],
         filter_out_terms: List[str],
-        timeout_seconds: Optional[int] = None
+        timeout_seconds: Optional[int] = None,
     ):
         super().__init__(sources, max_articles, days, timeout_seconds=timeout_seconds)
         self.filter_out_terms_list = filter_out_terms
