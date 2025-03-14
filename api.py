@@ -4,7 +4,7 @@ from pydantic import BaseModel, field_validator, Field
 import datetime
 from fundus import PublisherCollection, Article
 from crawlers import BodyFilterCrawler, UrlFilterCrawler
-from crawlers.base_crawler import CrawlerError, NetworkError, TimeoutError
+from crawlers.base_crawler import CrawlerError, NetworkError, TimeoutError, PUBLISHER_COLLECTIONS
 
 app = FastAPI(
     title="News Crawler API",
@@ -94,12 +94,7 @@ def get_sources(source_names: Optional[List[str]] = None):
     if not source_names:
         sources = [
             source
-            for collection in [
-                PublisherCollection.us,
-                PublisherCollection.uk,
-                PublisherCollection.au,
-                PublisherCollection.ca,
-            ]
+            for collection in PUBLISHER_COLLECTIONS.values()
             for name, source in vars(collection).items()
             if not name.startswith("__")
         ]
@@ -110,35 +105,27 @@ def get_sources(source_names: Optional[List[str]] = None):
     sources = []
     invalid_sources = []
     for name in source_names:
-        if hasattr(PublisherCollection.us, name):
-            sources.append(getattr(PublisherCollection.us, name))
-            print(f"Found {name} in US sources")
-        elif hasattr(PublisherCollection.uk, name):
-            sources.append(getattr(PublisherCollection.uk, name))
-            print(f"Found {name} in UK sources")
-        elif hasattr(PublisherCollection.au, name):
-            sources.append(getattr(PublisherCollection.au, name))
-            print(f"Found {name} in AU sources")
-        elif hasattr(PublisherCollection.ca, name):
-            sources.append(getattr(PublisherCollection.ca, name))
-            print(f"Found {name} in CA sources")
-        else:
+        found = False
+        for collection in PUBLISHER_COLLECTIONS.values():
+            if hasattr(collection, name):
+                sources.append(getattr(collection, name))
+                print(f"Found {name} in {collection.__class__.__name__}")
+                found = True
+                break
+        if not found:
             invalid_sources.append(name)
             print(f"Source not found: {name}")
 
     if invalid_sources:
-        valid_sources = {
-            **vars(PublisherCollection.us),
-            **vars(PublisherCollection.uk),
-            **vars(PublisherCollection.au),
-            **vars(PublisherCollection.ca),
-        }
-        valid_source_names = [
-            name for name in valid_sources.keys() if not name.startswith("__")
-        ]
+        valid_sources = {}
+        for collection in PUBLISHER_COLLECTIONS.values():
+            valid_sources.update(
+                {name: source for name, source in vars(collection).items() if not name.startswith("__")}
+            )
+        valid_source_names = sorted(valid_sources.keys())
         raise ValueError(
             f"Invalid source(s): {', '.join(invalid_sources)}. "
-            f"Valid sources are: {', '.join(sorted(valid_source_names))}"
+            f"Valid sources are: {', '.join(valid_source_names)}"
         )
 
     if not sources:
@@ -222,7 +209,7 @@ async def handle_crawler_request(
                 continue
 
         return CrawlerResponse(
-            message=f"{crawler_class.__name__} completed with {len(processed_articles)} articles found",
+            message=f"{crawler_class.__name__} completed with {len(processed_articles)} article(s) found",
             articles=processed_articles,
         )
 

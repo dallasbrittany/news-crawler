@@ -1,11 +1,8 @@
 import argparse
 import uvicorn
 from fundus import PublisherCollection
-from crawlers import BodyFilterCrawler, UrlFilterCrawler, SingleSourceCrawler
-from crawlers.helpers import (
-    print_include_not_implemented,
-    print_exclude_not_implemented,
-)
+from crawlers import BodyFilterCrawler, UrlFilterCrawler
+from crawlers.helpers import print_exclude_not_implemented
 from typing import Optional, List
 
 
@@ -121,26 +118,6 @@ def main(
             timeout_seconds=timeout,
         )
         url_filter_crawler.run_crawler()
-    elif crawler == "ny":
-        if keywords_include:
-            print_include_not_implemented()
-        if keywords_exclude:
-            print_exclude_not_implemented()
-        source = PublisherCollection.us.TheNewYorker
-        crawler = SingleSourceCrawler(
-            [source], max_articles, days_back, timeout_seconds=timeout
-        )
-        crawler.run_crawler()
-    elif crawler == "guardian":
-        if keywords_include:
-            print_include_not_implemented()
-        if keywords_exclude:
-            print_exclude_not_implemented()
-        source = PublisherCollection.uk.TheGuardian
-        crawler = SingleSourceCrawler(
-            [source], max_articles, days_back, timeout_seconds=timeout
-        )
-        crawler.run_crawler()
     else:
         raise ValueError(f"Unknown crawler type: {crawler}")
 

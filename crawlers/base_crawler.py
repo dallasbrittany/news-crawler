@@ -30,50 +30,45 @@ class TimeoutError(CrawlerError):
     pass
 
 
+# Constants for publisher collections
+PUBLISHER_COLLECTIONS = {
+    'US': PublisherCollection.us,
+    'UK': PublisherCollection.uk,
+    'AU': PublisherCollection.au,
+    'CA': PublisherCollection.ca,
+}
+
+
 def format_sources(sources_list):
     """Format sources list in a readable way, grouped by region."""
-    us_sources = []
-    uk_sources = []
-    au_sources = []
-    ca_sources = []
+    # Initialize source lists for each region
+    sources_by_region = {region: [] for region in PUBLISHER_COLLECTIONS}
     unknown_sources = []
 
-    # print(f"DEBUG: Received {len(sources_list)} sources to format")
     for source in sources_list:
-        # print(f"DEBUG: Processing source: {source}")
-
-        # Handle collection objects (like PublisherCollection.us)
+        # Handle collection objects
         if isinstance(source, type(PublisherCollection.us)):
             # Extract all publishers from the collection
             for name, publisher in vars(source).items():
-                if not name.startswith("__"):  # Skip Python special attributes
-                    if hasattr(publisher, "name"):
-                        # print(f"DEBUG: Found publisher in collection: {publisher.name}")
-                        # Add to appropriate region list based on collection
-                        if source == PublisherCollection.us:
-                            us_sources.append(publisher.name)
-                        elif source == PublisherCollection.uk:
-                            uk_sources.append(publisher.name)
-                        elif source == PublisherCollection.au:
-                            au_sources.append(publisher.name)
-                        elif source == PublisherCollection.ca:
-                            ca_sources.append(publisher.name)
+                if not name.startswith("__") and hasattr(publisher, "name"):
+                    # Find which collection this publisher belongs to
+                    for region, collection in PUBLISHER_COLLECTIONS.items():
+                        if source == collection:
+                            sources_by_region[region].append(publisher.name)
+                            break
             continue
 
         # Handle individual publisher objects
         source_name = getattr(source, "name", None)
         if source_name:
-            # print(f"DEBUG: Source has name: {source_name}")
             # Check which collection it belongs to
-            if hasattr(PublisherCollection.us, source_name):
-                us_sources.append(source_name)
-            elif hasattr(PublisherCollection.uk, source_name):
-                uk_sources.append(source_name)
-            elif hasattr(PublisherCollection.au, source_name):
-                au_sources.append(source_name)
-            elif hasattr(PublisherCollection.ca, source_name):
-                ca_sources.append(source_name)
-            else:
+            found = False
+            for region, collection in PUBLISHER_COLLECTIONS.items():
+                if hasattr(collection, source_name):
+                    sources_by_region[region].append(source_name)
+                    found = True
+                    break
+            if not found:
                 unknown_sources.append(source_name)
         else:
             print(
@@ -81,15 +76,11 @@ def format_sources(sources_list):
             )
             unknown_sources.append(str(source))
 
+    # Build output string
     output = []
-    if us_sources:
-        output.append(f"US ({len(us_sources)}): {', '.join(sorted(us_sources))}")
-    if uk_sources:
-        output.append(f"UK ({len(uk_sources)}): {', '.join(sorted(uk_sources))}")
-    if au_sources:
-        output.append(f"AU ({len(au_sources)}): {', '.join(sorted(au_sources))}")
-    if ca_sources:
-        output.append(f"CA ({len(ca_sources)}): {', '.join(sorted(ca_sources))}")
+    for region, sources in sources_by_region.items():
+        if sources:
+            output.append(f"{region} ({len(sources)}): {', '.join(sorted(sources))}")
     if unknown_sources:
         output.append(
             f"Unknown ({len(unknown_sources)}): {', '.join(sorted(unknown_sources))}"
