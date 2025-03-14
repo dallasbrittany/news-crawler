@@ -73,7 +73,7 @@ Each endpoint supports the following query parameters:
 - `keywords_include`: Keywords to include in search
 - `keywords_exclude`: Keywords to exclude from search
 - `timeout`: Maximum number of seconds to run the query (default: 25 seconds)
-- `sources`: List of news sources to crawl (e.g., TheNewYorker, TheGuardian). If not specified, uses all US, UK, Australian, and Canadian sources
+- `sources`: Comma-separated list of news sources to crawl (e.g., 'TheNewYorker,TheGuardian'). If not specified, uses all US, UK, Australian, and Canadian sources
 
 Note: The API mode has a default timeout of 25 seconds to ensure responsive behavior, while the CLI mode has no default timeout. You can override the API timeout by specifying a different value in the request.
 
@@ -82,14 +82,14 @@ Example API calls:
 # Get articles with specific keywords in body (uses default 25 second timeout)
 curl "http://localhost:8000/crawl/body?max_articles=5&keywords_include=climate&keywords_include=pollution"
 
-# Get articles with a custom timeout of 60 seconds
-curl "http://localhost:8000/crawl/body?sources=TheNewYorker&sources=TheGuardian&keywords_include=technology&timeout=60"
+# Get articles with a custom timeout of 60 seconds and multiple sources
+curl "http://localhost:8000/crawl/body?sources=TheNewYorker,TheGuardian&keywords_include=technology&timeout=60"
 
 # Get articles from The New Yorker only (uses default 25 second timeout)
 curl "http://localhost:8000/crawl/body?sources=TheNewYorker&max_articles=5"
 
 # Get articles from multiple sources with specific keywords (uses default 25 second timeout)
-curl "http://localhost:8000/crawl/body?sources=TheGuardian&sources=TheNewYorker&keywords_include=climate"
+curl "http://localhost:8000/crawl/body?sources=TheGuardian,TheNewYorker,NineNews&keywords_include=climate"
 ```
 
 ## Future Work

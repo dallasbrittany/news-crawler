@@ -163,15 +163,20 @@ async def crawl_body(
     keywords_exclude: Optional[List[str]] = Query(
         None, description="Keywords to exclude from search"
     ),
-    sources: Optional[List[str]] = Query(
+    sources: Optional[str] = Query(
         None,
-        description="List of sources to crawl (e.g., TheNewYorker, TheGuardian). If not specified, uses all sources",
+        description="Comma-separated list of sources to crawl (e.g., 'TheNewYorker,TheGuardian'). If not specified, uses all sources",
     ),
 ):
     try:
         print(f"API received timeout parameter: {params.timeout} seconds")
+        # Parse comma-separated sources if provided
+        sources_list = None
+        if sources:
+            sources_list = [s.strip() for s in sources.split(",")]
+
         # Use sources from query param if provided, otherwise use from params
-        sources_to_use = sources if sources is not None else params.sources
+        sources_to_use = sources_list if sources_list is not None else params.sources
         sources = get_sources(sources_to_use)
         terms_default = [
             "pollution",
@@ -230,9 +235,20 @@ async def crawl_url(
     keywords_exclude: Optional[List[str]] = Query(
         None, description="Terms to filter out from URL"
     ),
+    sources: Optional[str] = Query(
+        None,
+        description="Comma-separated list of sources to crawl (e.g., 'TheNewYorker,TheGuardian'). If not specified, uses all sources",
+    ),
 ):
     try:
-        sources = get_sources(params.sources)
+        # Parse comma-separated sources if provided
+        sources_list = None
+        if sources:
+            sources_list = [s.strip() for s in sources.split(",")]
+
+        # Use sources from query param if provided, otherwise use from params
+        sources_to_use = sources_list if sources_list is not None else params.sources
+        sources = get_sources(sources_to_use)
         required_terms_default = ["coral", "climate"]
         required_terms = (
             keywords_include if keywords_include else required_terms_default
