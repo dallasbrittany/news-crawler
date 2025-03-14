@@ -10,25 +10,29 @@ Very simple usage of `fundus` for news crawling. If it ends up being helpful, ma
 - Install with `pipenv` and make sure to use Python `3.8+` for `fundus` (note that this repo specifically was built with `3.11.10`) -- see bottom of this file for some tips
 - The crawler can be run in two modes: CLI or API. To see usage, run `main.py` and see something like this:
 ```
-usage: main.py [-h] {cli,api} [--crawler {body,url,ny,guardian}] [--max_articles MAX_ARTICLES]
+usage: main.py [-h] {cli,api} [--crawler {body,url}] [--max_articles MAX_ARTICLES]
                [--days_back DAYS_BACK] [--include INCLUDE [INCLUDE ...]]
                [--exclude EXCLUDE [EXCLUDE ...]] [--timeout TIMEOUT] [--host HOST] [--port PORT]
+               [--sources SOURCES [SOURCES ...]]
 ```
 
 ### CLI Mode
 For example, to see 10 articles from the Guardian that are from the last 2 days:
 ```
-python main.py cli --crawler guardian --max_articles 10 --days_back 2
+python main.py cli --crawler body --max_articles 10 --days_back 2 --sources TheGuardian
+```
+
+Or to specify multiple sources:
+```
+python main.py cli --crawler body --sources TheGuardian TheNewYorker --include climate
 ```
 
 Or to specify your own search terms for the body of articles in US and UK news sources with defaults for max articles and days back:
-
 ```
 python main.py cli --crawler body --include AI technology
 ```
 
 Or to specify technology but not AI in the URL (with the rest of the settings being defaults):
-
 ```
 python main.py cli --crawler url --include technology --exclude AI
 ```
@@ -44,6 +48,7 @@ Optional arguments:
 - `--include`: List of keywords to include in the search
 - `--exclude`: List of keywords to exclude from the search
 - `--timeout`: Maximum number of seconds to run the query (default: no timeout)
+- `--sources`: List of news sources to crawl (e.g., TheNewYorker, TheGuardian). If not specified, uses all US and UK sources
 
 ### API Mode
 The crawler can also be run as an API server that provides the same functionality through HTTP endpoints:
@@ -61,32 +66,32 @@ The API documentation will be available at `http://localhost:8000/docs` when the
 Available endpoints:
 - `/crawl/body` - Search articles by body content
 - `/crawl/url` - Search articles by URL patterns
-- `/crawl/ny` - Get articles from The New Yorker
-- `/crawl/guardian` - Get articles from The Guardian
 
 Each endpoint supports the following query parameters:
 - `max_articles`: Maximum number of articles to retrieve (optional)
 - `days_back`: Days to look back (default: 7)
-- `keywords_include`: Keywords to include in search (for body and URL endpoints)
-- `keywords_exclude`: Keywords to exclude from search (for body and URL endpoints)
+- `keywords_include`: Keywords to include in search
+- `keywords_exclude`: Keywords to exclude from search
 - `timeout`: Maximum number of seconds to run the query (optional)
+- `sources`: List of news sources to crawl (e.g., TheNewYorker, TheGuardian). If not specified, uses all US and UK sources
 
 Example API calls:
 ```bash
-# Get articles with specific keywords in body, timeout after 30 seconds
+# Get articles with specific keywords in body from all sources, timeout after 30 seconds
 curl "http://localhost:8000/crawl/body?max_articles=5&keywords_include=climate&keywords_include=pollution&timeout=30"
 
-# Get articles with specific URL patterns, timeout after 1 minute
-curl "http://localhost:8000/crawl/url?max_articles=10&keywords_include=technology&keywords_exclude=AI&timeout=60"
+# Get articles from specific sources with URL patterns
+curl "http://localhost:8000/crawl/url?sources=TheNewYorker&sources=TheGuardian&keywords_include=technology&keywords_exclude=AI"
 
-# Get articles from The New Yorker with a 45 second timeout
-curl "http://localhost:8000/crawl/ny?max_articles=5&timeout=45"
+# Get articles from The New Yorker only
+curl "http://localhost:8000/crawl/body?sources=TheNewYorker&max_articles=5"
+
+# Get articles from multiple sources with specific keywords
+curl "http://localhost:8000/crawl/body?sources=TheGuardian&sources=TheNewYorker&keywords_include=climate"
 ```
 
 ## Future Work
 - Add end_date as option to pass in (and rename days_back to start_date)
-- Allow passing in the sources instead of ever hard-coding them
-- More options for search (like filtering with a single source)
 - Handle errors gracefully like `lxml.etree.ParserError: Document is empty`
 - It's matching on part of words (so `threefold` matches `reef`), which isn't helpful in many cases
 - Make some more useful preset searches like daily essential news or favorite subjects

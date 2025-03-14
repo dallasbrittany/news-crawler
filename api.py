@@ -3,7 +3,7 @@ from typing import List, Optional, Dict, Any
 from pydantic import BaseModel, field_validator, Field
 import datetime
 from fundus import PublisherCollection, Article
-from crawlers import BodyFilterCrawler, UrlFilterCrawler, SingleSourceCrawler
+from crawlers import BodyFilterCrawler, UrlFilterCrawler
 from crawlers.base_crawler import CrawlerError, NetworkError, TimeoutError
 from crawlers.helpers import (
     print_include_not_implemented,
@@ -39,11 +39,27 @@ class CrawlerParams(BaseModel):
     timeout: Optional[int] = Field(
         None, ge=1, description="Maximum number of seconds to run the query"
     )
+    sources: Optional[List[str]] = Field(
+        None,
+        description="List of sources to crawl (e.g., ['TheNewYorker', 'TheGuardian']). If not specified, uses all US and UK sources",
+    )
 
     @field_validator("days_back")
     def validate_days_back(cls, v):
         if v <= 0:
             raise ValueError("days_back must be greater than 0")
+        return v
+
+    @field_validator("sources")
+    def validate_sources(cls, v):
+        if not v:
+            return None
+        valid_sources = {**vars(PublisherCollection.us), **vars(PublisherCollection.uk)}
+        for source in v:
+            if source not in valid_sources:
+                raise ValueError(
+                    f"Invalid source: {source}. Valid sources are: {', '.join(valid_sources.keys())}"
+                )
         return v
 
 
@@ -73,6 +89,21 @@ def article_to_dict(article: Article) -> Dict[str, Any]:
         )
 
 
+def get_sources(source_names: Optional[List[str]] = None):
+    if not source_names:
+        return (PublisherCollection.us, PublisherCollection.uk)
+
+    sources = []
+    for name in source_names:
+        if hasattr(PublisherCollection.us, name):
+            sources.append(getattr(PublisherCollection.us, name))
+        elif hasattr(PublisherCollection.uk, name):
+            sources.append(getattr(PublisherCollection.uk, name))
+    return (
+        tuple(sources) if sources else (PublisherCollection.us, PublisherCollection.uk)
+    )
+
+
 @app.get("/crawl/body", response_model=CrawlerResponse)
 async def crawl_body(
     params: CrawlerParams = Depends(),
@@ -84,7 +115,7 @@ async def crawl_body(
     ),
 ):
     try:
-        default_sources = (PublisherCollection.us, PublisherCollection.uk)
+        sources = get_sources(params.sources)
         terms_default = [
             "pollution",
             "environmental",
@@ -96,19 +127,38 @@ async def crawl_body(
         body_search_terms = keywords_include if keywords_include else terms_default
 
         crawler = BodyFilterCrawler(
-            default_sources,
+            sources,
             params.max_articles,
             params.days_back,
             body_search_terms,
             timeout_seconds=params.timeout,
         )
-        articles = crawler.run_crawler(display_output=False)
+        articles = crawler.run_crawler(
+            display_output=True
+        )  # Enable display output temporarily for debugging
+        print(f"Crawler returned {len(articles)} articles")
+
+        processed_articles = []
+        for i, article in enumerate(articles):
+            try:
+                processed_article = article_to_dict(article)
+                processed_articles.append(processed_article)
+            except Exception as e:
+                print(f"Error processing article {i}: {type(e).__name__}: {str(e)}")
+                continue
 
         return CrawlerResponse(
-            message=f"Body crawler completed with {len(articles)} articles found",
-            articles=[article_to_dict(article) for article in articles],
+            message=f"Body crawler completed with {len(processed_articles)} articles found",
+            articles=processed_articles,
         )
     except Exception as e:
+        print(f"Error in crawl_body: {type(e).__name__}: {str(e)}")
+        if isinstance(e, (AttributeError, TypeError)):
+            raise HTTPException(
+                status_code=422, detail=f"Error processing article data: {str(e)}"
+            )
+        if isinstance(e, ValueError):
+            raise HTTPException(status_code=400, detail=str(e))
         return handle_crawler_error(e)
 
 
@@ -123,7 +173,7 @@ async def crawl_url(
     ),
 ):
     try:
-        default_sources = (PublisherCollection.us, PublisherCollection.uk)
+        sources = get_sources(params.sources)
         required_terms_default = ["coral", "climate"]
         required_terms = (
             keywords_include if keywords_include else required_terms_default
@@ -135,7 +185,7 @@ async def crawl_url(
         )
 
         crawler = UrlFilterCrawler(
-            default_sources,
+            sources,
             params.max_articles,
             params.days_back,
             required_terms,
@@ -146,46 +196,6 @@ async def crawl_url(
 
         return CrawlerResponse(
             message=f"URL crawler completed with {len(articles)} articles found",
-            articles=[article_to_dict(article) for article in articles],
-        )
-    except Exception as e:
-        return handle_crawler_error(e)
-
-
-@app.get("/crawl/ny", response_model=CrawlerResponse)
-async def crawl_ny(params: CrawlerParams = Depends()):
-    try:
-        source = PublisherCollection.us.TheNewYorker
-        crawler = SingleSourceCrawler(
-            [source],
-            params.max_articles,
-            params.days_back,
-            timeout_seconds=params.timeout,
-        )
-        articles = crawler.run_crawler(display_output=False)
-
-        return CrawlerResponse(
-            message=f"New Yorker crawler completed with {len(articles)} articles found",
-            articles=[article_to_dict(article) for article in articles],
-        )
-    except Exception as e:
-        return handle_crawler_error(e)
-
-
-@app.get("/crawl/guardian", response_model=CrawlerResponse)
-async def crawl_guardian(params: CrawlerParams = Depends()):
-    try:
-        source = PublisherCollection.uk.TheGuardian
-        crawler = SingleSourceCrawler(
-            [source],
-            params.max_articles,
-            params.days_back,
-            timeout_seconds=params.timeout,
-        )
-        articles = crawler.run_crawler(display_output=False)
-
-        return CrawlerResponse(
-            message=f"Guardian crawler completed with {len(articles)} articles found",
             articles=[article_to_dict(article) for article in articles],
         )
     except Exception as e:

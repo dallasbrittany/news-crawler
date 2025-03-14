@@ -73,17 +73,14 @@ class BaseCrawler(ABC):
                 max_articles=self.max_articles, **filter_params
             ):
                 try:
-                    # Check timeout if specified
+                    # Check if we have a valid publishing date
                     if (
-                        self.timeout_seconds
-                        and (time.time() - start_time) > self.timeout_seconds
+                        not hasattr(article, "publishing_date")
+                        or article.publishing_date is None
                     ):
                         if display_output:
-                            print(
-                                f"\nTimeout reached after {self.timeout_seconds} seconds"
-                            )
-                            print_divider()
-                        break  # Just stop collecting articles and return what we have
+                            print("\nSkipping article with no publishing date")
+                        continue
 
                     # URL filters don't check date because they only look at the URLs, so it's done here instead
                     if article.publishing_date.date() >= self.start_date:
@@ -97,6 +94,16 @@ class BaseCrawler(ABC):
                     else:
                         if display_output:
                             print(".")
+
+                    # Check timeout if specified and just stop collecting articles if it's reached
+                    elapsed_time = time.time() - start_time
+                    if self.timeout_seconds and elapsed_time > self.timeout_seconds:
+                        if display_output:
+                            print(
+                                f"\nTimeout reached after {elapsed_time:.1f} seconds. Returning {len(articles)} articles collected so far."
+                            )
+                            print_divider()
+                        return articles
 
                 except (
                     requests.exceptions.RequestException,
@@ -113,11 +120,25 @@ class BaseCrawler(ABC):
                         )
                     time.sleep(1)  # Add a small delay before retrying
                     continue
+                except AttributeError as e:
+                    if display_output:
+                        print(f"\nSkipping article due to missing attribute: {str(e)}")
+                    continue
+                except Exception as e:
+                    if display_output:
+                        print(
+                            f"\nUnexpected error processing article: {type(e).__name__}: {str(e)}"
+                        )
+                    continue
 
         except Exception as e:
             if display_output:
-                print(f"\nError during crawling: {str(e)}")
+                print(f"\nError during crawling: {type(e).__name__}: {str(e)}")
                 print_divider()
-            raise
+            raise CrawlerError(f"Crawler error: {str(e)}")
+
+        if display_output:
+            print(f"\nCrawling completed. Found {len(articles)} articles.")
+            print_divider()
 
         return articles
