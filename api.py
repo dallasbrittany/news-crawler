@@ -1,7 +1,7 @@
 from fastapi import FastAPI, Query
-from typing import List, Optional
+from typing import List, Optional, Dict, Any
 from pydantic import BaseModel
-from fundus import PublisherCollection
+from fundus import PublisherCollection, Article
 from crawlers import BodyFilterCrawler, UrlFilterCrawler, SingleSourceCrawler
 from crawlers.helpers import print_include_not_implemented, print_exclude_not_implemented
 
@@ -11,9 +11,25 @@ app = FastAPI(
     version="1.0.0"
 )
 
+class ArticleResponse(BaseModel):
+    title: str
+    url: str
+    publishing_date: str
+    body: str
+    authors: List[str]
+
 class CrawlerResponse(BaseModel):
     message: str
-    articles: List[dict]
+    articles: List[ArticleResponse]
+
+def article_to_dict(article: Article) -> Dict[str, Any]:
+    return {
+        "title": article.title,
+        "url": article.html.requested_url,
+        "publishing_date": str(article.publishing_date),
+        "body": str(article.body),
+        "authors": article.authors
+    }
 
 @app.get("/crawl/body", response_model=CrawlerResponse)
 async def crawl_body(
@@ -36,11 +52,11 @@ async def crawl_body(
     crawler = BodyFilterCrawler(
         default_sources, max_articles, days_back, body_search_terms
     )
-    articles = crawler.run_crawler()
+    articles = crawler.run_crawler(display_output=False)
     
     return CrawlerResponse(
         message=f"Body crawler completed with {len(articles)} articles found",
-        articles=articles
+        articles=[article_to_dict(article) for article in articles]
     )
 
 @app.get("/crawl/url", response_model=CrawlerResponse)
@@ -60,11 +76,11 @@ async def crawl_url(
     crawler = UrlFilterCrawler(
         default_sources, max_articles, days_back, required_terms, filter_out_terms
     )
-    articles = crawler.run_crawler()
+    articles = crawler.run_crawler(display_output=False)
     
     return CrawlerResponse(
         message=f"URL crawler completed with {len(articles)} articles found",
-        articles=articles
+        articles=[article_to_dict(article) for article in articles]
     )
 
 @app.get("/crawl/ny", response_model=CrawlerResponse)
@@ -74,11 +90,11 @@ async def crawl_ny(
 ):
     source = PublisherCollection.us.TheNewYorker
     crawler = SingleSourceCrawler([source], max_articles, days_back)
-    articles = crawler.run_crawler()
+    articles = crawler.run_crawler(display_output=False)
     
     return CrawlerResponse(
         message=f"New Yorker crawler completed with {len(articles)} articles found",
-        articles=articles
+        articles=[article_to_dict(article) for article in articles]
     )
 
 @app.get("/crawl/guardian", response_model=CrawlerResponse)
@@ -88,9 +104,9 @@ async def crawl_guardian(
 ):
     source = PublisherCollection.uk.TheGuardian
     crawler = SingleSourceCrawler([source], max_articles, days_back)
-    articles = crawler.run_crawler()
+    articles = crawler.run_crawler(display_output=False)
     
     return CrawlerResponse(
         message=f"Guardian crawler completed with {len(articles)} articles found",
-        articles=articles
+        articles=[article_to_dict(article) for article in articles]
     ) 

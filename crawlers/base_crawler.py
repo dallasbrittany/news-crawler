@@ -1,7 +1,7 @@
-from typing import Dict, Any
+from typing import Dict, Any, List
 from abc import ABC, abstractmethod
 import datetime
-from fundus import Crawler, PublisherCollection, Sitemap
+from fundus import Crawler, PublisherCollection, Sitemap, Article
 from crawlers.helpers import display, print_divider
 
 
@@ -27,17 +27,23 @@ class BaseCrawler(ABC):
             return not (start_date <= publishing_date.date() <= end_date)
         return True
 
-    def run_crawler(self):
+    def run_crawler(self, display_output: bool = True) -> List[Article]:
         filter_params = self.get_filter_params()
+        articles = []
         for article in self.crawler.crawl(
             max_articles=self.max_articles, **filter_params
         ):
             # URL filters don't check date because they only look at the URLs, so it's done here instead, which isn't ideal
             # But body filter does check date in advance, so this check is redundant for body filter
             if article.publishing_date.date() >= self.start_date:
-                display(article)
+                if display_output:
+                    display(article)
+                articles.append(article)
             elif self.max_articles:
-                print("\n(Skipping display of older article.)")
-                print_divider()
+                if display_output:
+                    print("\n(Skipping display of older article.)")
+                    print_divider()
             else:
-                print(".")
+                if display_output:
+                    print(".")
+        return articles

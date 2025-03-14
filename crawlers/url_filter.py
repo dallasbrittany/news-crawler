@@ -2,6 +2,7 @@ from typing import Dict, Any, List
 from fundus.scraping.filter import inverse, regex_filter, lor, land
 from crawlers.base_crawler import BaseCrawler
 from crawlers.helpers import display, print_divider
+from fundus import Article
 
 
 class UrlFilterCrawler(BaseCrawler):
@@ -28,9 +29,10 @@ class UrlFilterCrawler(BaseCrawler):
 
         return {"url_filter": lor(filter_out, filter_include)}
 
-    def run_crawler(self):
-        print("filter include terms", self.filter_include_terms_list)
-        print("filter out terms", self.filter_out_terms_list)
-        print_divider()
+    def run_crawler(self, display_output: bool = True) -> List[Article]:
+        if display_output:
+            print("filter include terms", self.filter_include_terms_list)
+            print("filter out terms", self.filter_out_terms_list)
+            print_divider()
 
-        super().run_crawler()
+        return super().run_crawler(display_output=display_output)
