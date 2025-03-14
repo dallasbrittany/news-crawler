@@ -27,8 +27,10 @@ class BodyFilterCrawler(BaseCrawler):
     def get_filter_params(self) -> Dict[str, Any]:
         return {"only_complete": lor(self.publishing_date_filter, self.body_filter)}
 
-    def run_crawler(self, display_output: bool = True) -> List[Article]:
+    def run_crawler(
+        self, display_output: bool = True, show_body: bool = True
+    ) -> List[Article]:
         if display_output:
             print("body search terms", self.body_search_terms)
             print_divider()
-        return super().run_crawler(display_output=display_output)
+        return super().run_crawler(display_output=display_output, show_body=show_body)

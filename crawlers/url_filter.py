@@ -30,10 +30,12 @@ class UrlFilterCrawler(BaseCrawler):
 
         return {"url_filter": lor(filter_out, filter_include)}
 
-    def run_crawler(self, display_output: bool = True) -> List[Article]:
+    def run_crawler(
+        self, display_output: bool = True, show_body: bool = True
+    ) -> List[Article]:
         if display_output:
             print("filter include terms", self.filter_include_terms_list)
             print("filter out terms", self.filter_out_terms_list)
             print_divider()
 
-        return super().run_crawler(display_output=display_output)
+        return super().run_crawler(display_output=display_output, show_body=show_body)

@@ -106,7 +106,7 @@ curl "http://localhost:8000/crawl/body?sources=TheGuardian&sources=TheNewYorker&
 - General code improvements
 
 ## Resources
-- [fundus](https://github.com/flairNLP/fundus)
+- [fundus](https://github.com/flairNLP/fundus) and [fundus supported publishers](https://github.com/flairNLP/fundus/blob/master/docs/supported_publishers.md)
 
 > NOTE: Fundus' filters work inversely to Python's built-in filter. A filter in Fundus describes what is filtered out and not what's kept. If a filter returns True on a specific element the element will be dropped.
 

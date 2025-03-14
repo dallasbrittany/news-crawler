@@ -96,33 +96,62 @@ def article_to_dict(article: Article) -> Dict[str, Any]:
 
 def get_sources(source_names: Optional[List[str]] = None):
     if not source_names:
-        return (
-            PublisherCollection.us,
-            PublisherCollection.uk,
-            PublisherCollection.au,
-            PublisherCollection.ca,
-        )
+        sources = [
+            source
+            for collection in [
+                PublisherCollection.us,
+                PublisherCollection.uk,
+                PublisherCollection.au,
+                PublisherCollection.ca,
+            ]
+            for name, source in vars(collection).items()
+            if not name.startswith("__")
+        ]
+        print(f"No sources specified, returning all sources: {len(sources)} sources")
+        return sources
 
+    print(f"Requested sources: {source_names}")
     sources = []
+    invalid_sources = []
     for name in source_names:
         if hasattr(PublisherCollection.us, name):
             sources.append(getattr(PublisherCollection.us, name))
+            print(f"Found {name} in US sources")
         elif hasattr(PublisherCollection.uk, name):
             sources.append(getattr(PublisherCollection.uk, name))
+            print(f"Found {name} in UK sources")
         elif hasattr(PublisherCollection.au, name):
             sources.append(getattr(PublisherCollection.au, name))
+            print(f"Found {name} in AU sources")
         elif hasattr(PublisherCollection.ca, name):
             sources.append(getattr(PublisherCollection.ca, name))
-    return (
-        tuple(sources)
-        if sources
-        else (
-            PublisherCollection.us,
-            PublisherCollection.uk,
-            PublisherCollection.au,
-            PublisherCollection.ca,
+            print(f"Found {name} in CA sources")
+        else:
+            invalid_sources.append(name)
+            print(f"Source not found: {name}")
+
+    if invalid_sources:
+        valid_sources = {
+            **vars(PublisherCollection.us),
+            **vars(PublisherCollection.uk),
+            **vars(PublisherCollection.au),
+            **vars(PublisherCollection.ca),
+        }
+        valid_source_names = [
+            name for name in valid_sources.keys() if not name.startswith("__")
+        ]
+        raise ValueError(
+            f"Invalid source(s): {', '.join(invalid_sources)}. "
+            f"Valid sources are: {', '.join(sorted(valid_source_names))}"
         )
+
+    if not sources:
+        raise ValueError("No valid sources provided")
+
+    print(
+        f"Returning {len(sources)} sources: {[s.name if hasattr(s, 'name') else str(s) for s in sources]}"
     )
+    return sources
 
 
 @app.get("/crawl/body", response_model=CrawlerResponse)
@@ -134,9 +163,16 @@ async def crawl_body(
     keywords_exclude: Optional[List[str]] = Query(
         None, description="Keywords to exclude from search"
     ),
+    sources: Optional[List[str]] = Query(
+        None,
+        description="List of sources to crawl (e.g., TheNewYorker, TheGuardian). If not specified, uses all sources",
+    ),
 ):
     try:
-        sources = get_sources(params.sources)
+        print(f"API received timeout parameter: {params.timeout} seconds")
+        # Use sources from query param if provided, otherwise use from params
+        sources_to_use = sources if sources is not None else params.sources
+        sources = get_sources(sources_to_use)
         terms_default = [
             "pollution",
             "environmental",
@@ -147,6 +183,7 @@ async def crawl_body(
         ]
         body_search_terms = keywords_include if keywords_include else terms_default
 
+        print(f"Creating crawler with timeout: {params.timeout} seconds")
         crawler = BodyFilterCrawler(
             sources,
             params.max_articles,
@@ -155,8 +192,9 @@ async def crawl_body(
             timeout_seconds=params.timeout,
         )
         articles = crawler.run_crawler(
-            display_output=True
-        )  # Enable display output temporarily for debugging
+            display_output=True,  # Enable display output temporarily for debugging
+            show_body=False,  # Don't show article bodies in API mode
+        )
         print(f"Crawler returned {len(articles)} articles")
 
         processed_articles = []
