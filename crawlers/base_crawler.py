@@ -1,16 +1,18 @@
-from typing import Dict, Any, List
+from typing import Dict, Any, List, Optional
 from abc import ABC, abstractmethod
 import datetime
+import time
 from fundus import Crawler, PublisherCollection, Sitemap, Article
 from crawlers.helpers import display, print_divider
 
 
 class BaseCrawler(ABC):
-    def __init__(self, sources, max_articles: int, days: int):
+    def __init__(self, sources, max_articles: int, days: int, timeout_seconds: Optional[int] = None):
         # NOTE: adding restrict_sources_to=[Sitemap] makes The Guardian not work
         self.crawler = Crawler(*sources)
         self.max_articles = max_articles
         self.days = days
+        self.timeout_seconds = timeout_seconds
         self.start_date = datetime.date.today() - datetime.timedelta(days=days)
         # TODO: Allow end date to be passed in instead of assuming it's today
 
@@ -30,9 +32,18 @@ class BaseCrawler(ABC):
     def run_crawler(self, display_output: bool = True) -> List[Article]:
         filter_params = self.get_filter_params()
         articles = []
+        start_time = time.time()
+
         for article in self.crawler.crawl(
             max_articles=self.max_articles, **filter_params
         ):
+            # Check timeout if specified
+            if self.timeout_seconds and (time.time() - start_time) > self.timeout_seconds:
+                if display_output:
+                    print(f"\nTimeout reached after {self.timeout_seconds} seconds")
+                    print_divider()
+                break
+
             # URL filters don't check date because they only look at the URLs, so it's done here instead, which isn't ideal
             # But body filter does check date in advance, so this check is redundant for body filter
             if article.publishing_date.date() >= self.start_date:

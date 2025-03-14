@@ -12,7 +12,7 @@ Very simple usage of `fundus` for news crawling. If it ends up being helpful, ma
 ```
 usage: main.py [-h] {cli,api} [--crawler {body,url,ny,guardian}] [--max_articles MAX_ARTICLES]
                [--days_back DAYS_BACK] [--include INCLUDE [INCLUDE ...]]
-               [--exclude EXCLUDE [EXCLUDE ...]] [--host HOST] [--port PORT]
+               [--exclude EXCLUDE [EXCLUDE ...]] [--timeout TIMEOUT] [--host HOST] [--port PORT]
 ```
 
 ### CLI Mode
@@ -33,6 +33,18 @@ Or to specify technology but not AI in the URL (with the rest of the settings be
 python main.py cli --crawler url --include technology --exclude AI
 ```
 
+You can also set a timeout to limit how long the crawler runs:
+```
+python main.py cli --crawler body --include climate --timeout 30  # Stop after 30 seconds
+```
+
+Optional arguments:
+- `--max_articles`: Maximum number of articles to retrieve (default: unlimited)
+- `--days_back`: Number of days back to search (default: 7)
+- `--include`: List of keywords to include in the search
+- `--exclude`: List of keywords to exclude from the search
+- `--timeout`: Maximum number of seconds to run the query (default: no timeout)
+
 ### API Mode
 The crawler can also be run as an API server that provides the same functionality through HTTP endpoints:
 
@@ -52,13 +64,23 @@ Available endpoints:
 - `/crawl/ny` - Get articles from The New Yorker
 - `/crawl/guardian` - Get articles from The Guardian
 
+Each endpoint supports the following query parameters:
+- `max_articles`: Maximum number of articles to retrieve (optional)
+- `days_back`: Days to look back (default: 7)
+- `keywords_include`: Keywords to include in search (for body and URL endpoints)
+- `keywords_exclude`: Keywords to exclude from search (for body and URL endpoints)
+- `timeout`: Maximum number of seconds to run the query (optional)
+
 Example API calls:
 ```bash
-# Get articles with specific keywords in body
-curl "http://localhost:8000/crawl/body?max_articles=5&keywords_include=climate&keywords_include=pollution"
+# Get articles with specific keywords in body, timeout after 30 seconds
+curl "http://localhost:8000/crawl/body?max_articles=5&keywords_include=climate&keywords_include=pollution&timeout=30"
 
-# Get articles with specific URL patterns
-curl "http://localhost:8000/crawl/url?max_articles=10&keywords_include=technology&keywords_exclude=AI"
+# Get articles with specific URL patterns, timeout after 1 minute
+curl "http://localhost:8000/crawl/url?max_articles=10&keywords_include=technology&keywords_exclude=AI&timeout=60"
+
+# Get articles from The New Yorker with a 45 second timeout
+curl "http://localhost:8000/crawl/ny?max_articles=5&timeout=45"
 ```
 
 ## Future Work

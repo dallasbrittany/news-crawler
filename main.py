@@ -6,6 +6,7 @@ from crawlers.helpers import (
     print_include_not_implemented,
     print_exclude_not_implemented,
 )
+from typing import Optional
 
 
 def main(
@@ -14,14 +15,16 @@ def main(
     days_back: int,
     keywords_include: list,
     keywords_exclude: list,
+    timeout: Optional[int] = None,
 ):
     max_str = (
         f" with max articles set to {max_articles}"
         if max_articles
         else " with no max article limit"
     )
+    timeout_str = f" with a timeout of {timeout} seconds" if timeout else ""
     print(
-        f"Using {crawler} crawler for search{max_str} and going {days_back} day(s) back.\n"
+        f"Using {crawler} crawler for search{max_str} and going {days_back} day(s) back{timeout_str}.\n"
     )
 
     default_sources = (PublisherCollection.us, PublisherCollection.uk)
@@ -41,7 +44,7 @@ def main(
             print_exclude_not_implemented()
 
         crawler = BodyFilterCrawler(
-            default_sources, max_articles, days_back, body_search_terms
+            default_sources, max_articles, days_back, body_search_terms, timeout_seconds=timeout
         )
         crawler.run_crawler()
     elif crawler == "url":
@@ -57,7 +60,7 @@ def main(
         )
 
         url_filter_crawler = UrlFilterCrawler(
-            default_sources, max_articles, days_back, required_terms, filter_out_terms
+            default_sources, max_articles, days_back, required_terms, filter_out_terms, timeout_seconds=timeout
         )
         url_filter_crawler.run_crawler()
     elif crawler == "ny":
@@ -66,7 +69,7 @@ def main(
         if keywords_exclude:
             print_exclude_not_implemented()
         source = PublisherCollection.us.TheNewYorker
-        crawler = SingleSourceCrawler([source], max_articles, days_back)
+        crawler = SingleSourceCrawler([source], max_articles, days_back, timeout_seconds=timeout)
         crawler.run_crawler()
     elif crawler == "guardian":
         if keywords_include:
@@ -74,7 +77,7 @@ def main(
         if keywords_exclude:
             print_exclude_not_implemented()
         source = PublisherCollection.uk.TheGuardian
-        crawler = SingleSourceCrawler([source], max_articles, days_back)
+        crawler = SingleSourceCrawler([source], max_articles, days_back, timeout_seconds=timeout)
         crawler.run_crawler()
     else:
         raise ValueError(f"Unknown crawler type: {crawler}")
@@ -111,6 +114,12 @@ if __name__ == "__main__":
         "--exclude", nargs="+", help="List of keywords to exclude from the search"
     )
     parser.add_argument(
+        "--timeout",
+        type=int,
+        default=None,
+        help="Maximum number of seconds to run the query (default: no timeout)",
+    )
+    parser.add_argument(
         "--host",
         default="127.0.0.1",
         help="Host to run the API server on (default: 127.0.0.1)",
@@ -127,7 +136,7 @@ if __name__ == "__main__":
     if args.mode == "cli":
         if not args.crawler:
             parser.error("CLI mode requires --crawler argument")
-        main(args.crawler, args.max_articles, args.days_back, args.include, args.exclude)
+        main(args.crawler, args.max_articles, args.days_back, args.include, args.exclude, args.timeout)
     else:  # api mode
         from api import app
         print(f"Starting API server on {args.host}:{args.port}")

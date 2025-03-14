@@ -1,4 +1,4 @@
-from typing import Dict, List, Any
+from typing import Dict, List, Any, Optional
 from fundus.scraping.filter import inverse, regex_filter, lor, land
 from crawlers.base_crawler import BaseCrawler
 from crawlers.helpers import print_divider
@@ -7,9 +7,9 @@ from fundus import Article
 
 class BodyFilterCrawler(BaseCrawler):
     def __init__(
-        self, sources, max_articles: int, days: int, body_search_terms: List[str]
+        self, sources, max_articles: int, days: int, body_search_terms: List[str], timeout_seconds: Optional[int] = None
     ):
-        super().__init__(sources, max_articles, days)
+        super().__init__(sources, max_articles, days, timeout_seconds=timeout_seconds)
         self.body_search_terms = body_search_terms
 
     def body_filter(self, extracted: Dict[str, Any]) -> bool:
