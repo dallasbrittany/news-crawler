@@ -76,16 +76,9 @@ def main(
     crawler_sources = get_sources(sources)
 
     if crawler == "body":
-        # matches on any of these terms in the body
-        terms_default = [
-            "pollution",
-            "environmental",
-            "climate crisis",
-            "EPA",
-            "coral",
-            "reef",
-        ]
-        body_search_terms = keywords_include if keywords_include else terms_default
+        if not keywords_include:
+            raise ValueError("keywords_include is required for body search")
+
         if keywords_exclude:
             print_exclude_not_implemented()
 
@@ -93,28 +86,20 @@ def main(
             crawler_sources,
             max_articles,
             days_back,
-            body_search_terms,
+            keywords_include,
             timeout_seconds=timeout,
         )
         crawler.run_crawler()
     elif crawler == "url":
-        # must match on all the required terms in the URL
-        required_terms_default = ["coral", "climate"]
-        required_terms = (
-            keywords_include if keywords_include else required_terms_default
-        )
-
-        filter_out_terms_default = ["advertisement", "podcast"]
-        filter_out_terms = (
-            keywords_exclude if keywords_exclude else filter_out_terms_default
-        )
+        if not keywords_include:
+            raise ValueError("keywords_include is required for URL search")
 
         url_filter_crawler = UrlFilterCrawler(
             crawler_sources,
             max_articles,
             days_back,
-            required_terms,
-            filter_out_terms,
+            keywords_include,
+            keywords_exclude or [],
             timeout_seconds=timeout,
         )
         url_filter_crawler.run_crawler()
