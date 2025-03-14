@@ -1,6 +1,6 @@
 # news-crawler
 
-Very simple usage of `fundus` for news crawling. If it ends up being helpful, maybe it'll get expanded later.
+Uses `fundus` for news crawling and includes a CLI mode as well as an API mode.
 
 - The `examples` folder contains examples from the `fundus` `README`.
 - The `crawlers` folder contains custom search classes that can be used from `main.py`.
