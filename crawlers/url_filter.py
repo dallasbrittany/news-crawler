@@ -20,15 +20,17 @@ class UrlFilterCrawler(BaseCrawler):
         self.filter_include_terms_list = filter_include_terms
 
     def get_filter_params(self) -> Dict[str, Any]:
-        filter_out_terms = "|".join(self.filter_out_terms_list)
-        filter_out = regex_filter(filter_out_terms)
-
         filter_include_terms = [
             regex_filter(term) for term in self.filter_include_terms_list
         ]
         filter_include = inverse(land(*filter_include_terms))
 
-        return {"url_filter": lor(filter_out, filter_include)}
+        # Only use filter_out if there are actual terms to filter out
+        if self.filter_out_terms_list and len(self.filter_out_terms_list) > 0:
+            filter_out_terms = "|".join(self.filter_out_terms_list)
+            filter_out = regex_filter(filter_out_terms)
+            return {"url_filter": lor(filter_out, filter_include)}
+        return {"url_filter": filter_include}
 
     def run_crawler(
         self, display_output: bool = True, show_body: bool = True

@@ -157,14 +157,26 @@ def parse_sources(
 
 async def handle_crawler_request(
     params: CrawlerParams,
-    keywords_include: Optional[List[str]],
+    keywords_include: List[str],
     keywords_exclude: Optional[List[str]],
     sources: Optional[str],
     crawler_class,
-    default_include_terms: List[str],
-    default_exclude_terms: Optional[List[str]] = None,
 ) -> CrawlerResponse:
-    """Handle common crawler request logic for both body and URL endpoints."""
+    """Handle common crawler request logic for both body and URL endpoints.
+
+    Args:
+        params: Common crawler parameters (max_articles, days_back, timeout, etc.)
+        keywords_include: Required keywords to include in search
+        keywords_exclude: Optional keywords to exclude from search (only used by UrlFilterCrawler)
+        sources: Comma-separated list of sources to crawl
+        crawler_class: Either BodyFilterCrawler or UrlFilterCrawler
+
+    Returns:
+        CrawlerResponse containing found articles and status message
+
+    Raises:
+        HTTPException: For various error conditions (400, 408, 422, 500, 503)
+    """
     try:
         print(f"API received timeout parameter: {params.timeout} seconds")
 
@@ -172,19 +184,20 @@ async def handle_crawler_request(
         sources_list = parse_sources(sources, params.sources)
         sources = get_sources(sources_list)
 
-        # Set up search terms
-        include_terms = keywords_include if keywords_include else default_include_terms
-        exclude_terms = (
-            keywords_exclude if keywords_exclude else (default_exclude_terms or [])
-        )
-
         print(f"Creating crawler with timeout: {params.timeout} seconds")
         if crawler_class == UrlFilterCrawler:
+            # Only pass exclude terms if they are provided and not empty
+            exclude_terms = (
+                keywords_exclude
+                if keywords_exclude and len(keywords_exclude) > 0
+                else []
+            )
+            print(f"URL crawler exclude terms: {exclude_terms}")
             crawler = crawler_class(
                 sources,
                 params.max_articles,
                 params.days_back,
-                include_terms,
+                keywords_include,
                 exclude_terms,
                 timeout_seconds=params.timeout,
             )
@@ -193,7 +206,7 @@ async def handle_crawler_request(
                 sources,
                 params.max_articles,
                 params.days_back,
-                include_terms,
+                keywords_include,
                 timeout_seconds=params.timeout,
             )
 
@@ -236,55 +249,62 @@ async def handle_crawler_request(
 @app.get("/crawl/body", response_model=CrawlerResponse)
 async def crawl_body(
     params: CrawlerParams = Depends(),
-    keywords_include: Optional[List[str]] = Query(
-        None, description="Keywords to include in search"
+    keywords_include: List[str] = Query(
+        ..., description="Required keywords to include in search"
     ),
     keywords_exclude: Optional[List[str]] = Query(
-        None, description="Keywords to exclude from search"
+        None, description="Optional keywords to exclude from search"
     ),
     sources: Optional[str] = Query(
         None,
         description="Comma-separated list of sources to crawl (e.g., 'TheNewYorker,TheGuardian'). If not specified, uses all sources",
     ),
 ):
-    default_terms = [
-        "pollution",
-        "environmental",
-        "climate crisis",
-        "EPA",
-        "coral",
-        "reef",
-    ]
     return await handle_crawler_request(
         params,
         keywords_include,
         keywords_exclude,
         sources,
         BodyFilterCrawler,
-        default_terms,
     )
 
 
 @app.get("/crawl/url", response_model=CrawlerResponse)
 async def crawl_url(
     params: CrawlerParams = Depends(),
-    keywords_include: Optional[List[str]] = Query(
-        None, description="Required terms in URL"
+    keywords_include: List[str] = Query(
+        ...,
+        description="Required keywords to include in URL search (comma-separated or multiple parameters)",
     ),
-    keywords_exclude: Optional[List[str]] = Query(
-        None, description="Terms to filter out from URL"
+    keywords_exclude: List[str] = Query(
+        [],
+        description="Terms to filter out from URL (comma-separated or multiple parameters)",
     ),
     sources: Optional[str] = Query(
         None,
         description="Comma-separated list of sources to crawl (e.g., 'TheNewYorker,TheGuardian'). If not specified, uses all sources",
     ),
 ):
+    # Split any comma-separated terms for both include and exclude
+    def expand_terms(terms):
+        expanded = []
+        for term in terms:
+            if "," in term:
+                expanded.extend(t.strip() for t in term.split(","))
+            else:
+                expanded.append(term.strip())
+        return expanded
+
+    expanded_include = expand_terms(keywords_include)
+    expanded_exclude = expand_terms(keywords_exclude)
+
+    print(f"Include terms: {expanded_include}")  # Debug print
+    print(f"Exclude terms: {expanded_exclude}")  # Debug print
+
     return await handle_crawler_request(
         params,
-        keywords_include,
-        keywords_exclude,
+        expanded_include,
+        expanded_exclude,
         sources,
         UrlFilterCrawler,
-        ["coral", "climate"],
-        ["advertisement", "podcast"],
     )
