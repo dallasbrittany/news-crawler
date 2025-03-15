@@ -265,9 +265,6 @@ async def crawl_body(
     include: List[str] = Query(
         ..., description="Required keywords to include in search"
     ),
-    exclude: Optional[List[str]] = Query(
-        None, description="Optional keywords to exclude from search"
-    ),
     sources: Optional[str] = Query(
         None,
         description="Comma-separated list of sources to crawl (e.g., 'TheNewYorker,TheGuardian'). If not specified, uses all sources",
@@ -279,7 +276,7 @@ async def crawl_body(
     return await handle_crawler_request(
         params,
         expanded_include,
-        exclude,
+        None,  # exclude parameter is not used for body search
         sources,
         BodyFilterCrawler,
     )
