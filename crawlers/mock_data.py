@@ -13,7 +13,7 @@ MOCK_ARTICLES = [
     {
         "title": "Tech Giants Face New Regulations",
         "url": "https://example.com/tech-regulations",
-        "body": "Major technology companies are facing increased scrutiny over data privacy and market dominance. Lawmakers propose new regulations to address concerns.",
+        "body": "Major technology companies are facing increased scrutiny over data privacy and market dominance. Lawmakers propose new regulations to address concerns. Will it do any good? Who knows. Time will tell.",
         "source": "TheNewYorker",
         "publishing_date": datetime.now() - timedelta(days=2),
     },
