@@ -256,7 +256,7 @@ async def handle_crawler_request(
             )
         if isinstance(e, ValueError):
             raise HTTPException(status_code=400, detail=str(e))
-        return handle_crawler_error(e)
+        handle_crawler_error(e)
 
 
 @app.get("/crawl/body", response_model=CrawlerResponse)
