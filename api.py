@@ -1,7 +1,6 @@
 from fastapi import FastAPI, Query, HTTPException, Depends
 from typing import List, Optional, Dict, Any
 from pydantic import BaseModel, field_validator, Field
-import datetime
 from fundus import PublisherCollection, Article
 from crawlers import BodyFilterCrawler, UrlFilterCrawler
 from crawlers.base_crawler import (
@@ -158,7 +157,7 @@ def parse_sources(
 async def handle_crawler_request(
     params: CrawlerParams,
     keywords_include: List[str],
-    keywords_exclude: Optional[List[str]],
+    exclude: Optional[List[str]],
     sources: Optional[str],
     crawler_class,
 ) -> CrawlerResponse:
@@ -167,7 +166,7 @@ async def handle_crawler_request(
     Args:
         params: Common crawler parameters (max_articles, days_back, timeout, etc.)
         keywords_include: Required keywords to include in search
-        keywords_exclude: Optional keywords to exclude from search (only used by UrlFilterCrawler)
+        exclude: Optional keywords to exclude from search (only used by UrlFilterCrawler)
         sources: Comma-separated list of sources to crawl
         crawler_class: Either BodyFilterCrawler or UrlFilterCrawler
 
@@ -188,8 +187,8 @@ async def handle_crawler_request(
         if crawler_class == UrlFilterCrawler:
             # Only pass exclude terms if they are provided and not empty
             exclude_terms = (
-                keywords_exclude
-                if keywords_exclude and len(keywords_exclude) > 0
+                exclude
+                if exclude and len(exclude) > 0
                 else []
             )
             print(f"URL crawler exclude terms: {exclude_terms}")
@@ -252,7 +251,7 @@ async def crawl_body(
     keywords_include: List[str] = Query(
         ..., description="Required keywords to include in search"
     ),
-    keywords_exclude: Optional[List[str]] = Query(
+    exclude: Optional[List[str]] = Query(
         None, description="Optional keywords to exclude from search"
     ),
     sources: Optional[str] = Query(
@@ -263,7 +262,7 @@ async def crawl_body(
     return await handle_crawler_request(
         params,
         keywords_include,
-        keywords_exclude,
+        exclude,
         sources,
         BodyFilterCrawler,
     )
@@ -276,7 +275,7 @@ async def crawl_url(
         ...,
         description="Required keywords to include in URL search (comma-separated or multiple parameters)",
     ),
-    keywords_exclude: List[str] = Query(
+    exclude: List[str] = Query(
         [],
         description="Terms to filter out from URL (comma-separated or multiple parameters)",
     ),
@@ -296,10 +295,10 @@ async def crawl_url(
         return expanded
 
     expanded_include = expand_terms(keywords_include)
-    expanded_exclude = expand_terms(keywords_exclude)
+    expanded_exclude = expand_terms(exclude)
 
-    print(f"Include terms: {expanded_include}")  # Debug print
-    print(f"Exclude terms: {expanded_exclude}")  # Debug print
+    print(f"Include terms: {expanded_include}")
+    print(f"Exclude terms: {expanded_exclude}")
 
     return await handle_crawler_request(
         params,

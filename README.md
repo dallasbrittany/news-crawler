@@ -75,7 +75,7 @@ Required parameters:
 Optional parameters:
 - `max_articles`: Maximum number of articles to retrieve (optional)
 - `days_back`: Days to look back (default: 7)
-- `keywords_exclude`: Keywords to exclude from search (only works with /crawl/url endpoint)
+- `exclude`: Keywords to exclude from search (only works with /crawl/url endpoint)
 - `timeout`: Maximum number of seconds to run the query (default: 25 seconds). When reached, returns articles collected up to that point.
 - `sources`: Comma-separated list of news sources to crawl (e.g., 'TheNewYorker,TheGuardian'). If not specified, uses all US, UK, Australian, and Canadian sources
 
@@ -96,10 +96,10 @@ curl "http://localhost:8000/crawl/body?sources=TheGuardian&keywords_include=envi
 curl "http://localhost:8000/crawl/body?sources=TheNewYorker,TheGuardian&keywords_include=technology&timeout=60"
 
 # Search for climate articles from The Guardian, excluding opinion and podcast pieces with URL filtering
-curl "http://localhost:8000/crawl/url?sources=TheGuardian&keywords_include=climate&keywords_exclude=opinion,podcast"
+curl "http://localhost:8000/crawl/url?sources=TheGuardian&keywords_include=climate&exclude=opinion,podcast"
 ```
 
-For both `keywords_include` and `keywords_exclude` in API calls, you can provide terms in two ways (at least for now):
+For both `keywords_include` and `exclude` in API calls, you can provide terms in two ways (at least for now):
 1. Multiple parameters: `keywords_include=term1&keywords_include=term2`
 2. Comma-separated: `keywords_include=term1,term2`
 
