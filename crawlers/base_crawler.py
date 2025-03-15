@@ -258,7 +258,7 @@ class BaseCrawler(ABC):
                 signal.alarm(0)  # Disable the alarm
 
         if display_output:
-            print(f"\nCrawling completed. Found {len(articles)} articles.")
+            print(f"\nCrawling completed. Found {len(articles)} article(s).")
             print_divider()
 
         return articles

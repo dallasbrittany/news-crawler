@@ -57,6 +57,7 @@ def main(
     keywords_exclude: list,
     timeout: Optional[int] = None,
     sources: Optional[List[str]] = None,
+    use_mock: bool = False,
 ):
     max_str = (
         f" with max articles set to {max_articles}"
@@ -69,8 +70,9 @@ def main(
         if sources
         else " from all US, UK, Australian, and Canadian sources"
     )
+    mock_str = " (using mock data)" if use_mock else ""
     print(
-        f"Using {crawler} crawler for search{sources_str}{max_str} and going {days_back} day(s) back{timeout_str}.\n"
+        f"Using {crawler} crawler for search{sources_str}{max_str} and going {days_back} day(s) back{timeout_str}{mock_str}.\n"
     )
 
     crawler_sources = get_sources(sources)
@@ -82,26 +84,53 @@ def main(
         if keywords_exclude:
             print_exclude_not_implemented()
 
-        crawler = BodyFilterCrawler(
-            crawler_sources,
-            max_articles,
-            days_back,
-            keywords_include,
-            timeout_seconds=timeout,
-        )
+        if use_mock:
+            from crawlers.mock_crawler import MockCrawler
+
+            crawler = MockCrawler(
+                crawler_sources,
+                max_articles,
+                days_back,
+                keywords_include,
+                timeout_seconds=timeout,
+            )
+        else:
+            from crawlers import BodyFilterCrawler
+
+            crawler = BodyFilterCrawler(
+                crawler_sources,
+                max_articles,
+                days_back,
+                keywords_include,
+                timeout_seconds=timeout,
+            )
         crawler.run_crawler()
     elif crawler == "url":
         if not keywords_include:
             raise ValueError("keywords_include is required for URL search")
 
-        url_filter_crawler = UrlFilterCrawler(
-            crawler_sources,
-            max_articles,
-            days_back,
-            keywords_include,
-            keywords_exclude or [],
-            timeout_seconds=timeout,
-        )
+        if use_mock:
+            from crawlers.mock_crawler import MockCrawler
+
+            url_filter_crawler = MockCrawler(
+                crawler_sources,
+                max_articles,
+                days_back,
+                keywords_include,
+                keywords_exclude or [],
+                timeout_seconds=timeout,
+            )
+        else:
+            from crawlers import UrlFilterCrawler
+
+            url_filter_crawler = UrlFilterCrawler(
+                crawler_sources,
+                max_articles,
+                days_back,
+                keywords_include,
+                keywords_exclude or [],
+                timeout_seconds=timeout,
+            )
         url_filter_crawler.run_crawler()
     else:
         raise ValueError(f"Unknown crawler type: {crawler}")
@@ -159,6 +188,11 @@ if __name__ == "__main__":
         nargs="+",
         help="List of news sources to crawl (e.g., TheNewYorker, TheGuardian). If not specified, uses all US and UK sources",
     )
+    parser.add_argument(
+        "--mock",
+        action="store_true",
+        help="Use mock data instead of real crawling (for testing)",
+    )
 
     args = parser.parse_args()
 
@@ -173,10 +207,14 @@ if __name__ == "__main__":
             args.exclude,
             args.timeout,
             args.sources,
+            args.mock,
         )
     else:  # api mode
         from api import app
 
         print(f"Starting API server on {args.host}:{args.port}")
         print("API documentation available at http://127.0.0.1:8000/docs")
+        if args.mock:
+            print("Running in mock mode - using test data instead of real crawling")
+            app.state.use_mock = True
         uvicorn.run(app, host=args.host, port=args.port)

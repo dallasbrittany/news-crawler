@@ -25,6 +25,44 @@ For terms containing spaces:
 - In CLI mode: Use quotes (`"climate crisis"`)
 - In API mode: Use URL encoding (`climate%20crisis`)
 
+### Mock Mode
+
+For testing and development purposes, you can run the crawler in mock mode. This mode uses predefined test data instead of making real network requests, which is useful for:
+- Offline development and testing
+- Faster response times
+- Consistent, predictable results
+- UI development and integration testing
+
+To use mock mode:
+
+1. CLI Mode with mock data:
+```bash
+# Search for climate articles using mock data
+python main.py cli --crawler body --include climate --mock
+
+# Search URLs with mock data
+python main.py cli --crawler url --include technology --exclude AI --mock
+```
+
+2. API Mode with mock data:
+```bash
+# Start the API server in mock mode
+python main.py api --mock
+```
+
+The mock data includes example articles about:
+- Climate change
+- Tech regulations
+- AI technology
+- Healthcare innovation
+- Sustainable energy
+
+Mock mode supports all the same filtering options as the real crawler:
+- Keyword filtering (include/exclude terms)
+- Date filtering
+- Source filtering (TheGuardian, TheNewYorker, Wired)
+- Article limit
+
 #### CLI Mode Examples
 
 To search for environmental articles from The Guardian in the last 2 days using multiple keywords with OR logic (using many keywords works well for body text search to cover a subject):

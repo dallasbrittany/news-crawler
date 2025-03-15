@@ -1,4 +1,5 @@
 from fastapi import FastAPI, Query, HTTPException, Depends
+from fastapi.concurrency import run_in_threadpool
 from typing import List, Optional, Dict, Any
 from pydantic import BaseModel, field_validator, Field
 from fundus import PublisherCollection, Article
@@ -20,14 +21,14 @@ app = FastAPI(
 class ArticleResponse(BaseModel):
     title: str
     url: str
-    publishing_date: str
+    publishing_date: Any  # Changed from str to Any to handle datetime
     body: str
-    authors: List[str]
+    authors: Optional[List[str]] = []  # Made optional with default empty list
 
 
 class CrawlerResponse(BaseModel):
-    message: str
     articles: List[ArticleResponse]
+    message: str = "Success"  # Added default value
     error: Optional[str] = None
 
 
@@ -80,15 +81,19 @@ def handle_crawler_error(e: Exception) -> Dict[str, Any]:
 
 
 def article_to_dict(article: Article) -> Dict[str, Any]:
+    """Convert an article to a dictionary format matching ArticleResponse."""
     try:
         return {
-            "title": article.title or "",
-            "url": article.html.requested_url,
-            "publishing_date": str(article.publishing_date),
-            "body": str(article.body),
-            "authors": article.authors or [],
+            "title": article.title,
+            "url": (
+                article.url if hasattr(article, "url") else article.html.requested_url
+            ),
+            "publishing_date": article.publishing_date,
+            "body": article.body,
+            "authors": getattr(article, "authors", []),
         }
     except AttributeError as e:
+        print(f"Error processing article: {str(e)}")
         raise HTTPException(
             status_code=422, detail=f"Error processing article data: {str(e)}"
         )
@@ -155,20 +160,14 @@ def parse_sources(
 
 
 def expand_terms(terms: List[str]) -> List[str]:
-    """Split any comma-separated terms into a list of individual terms.
-
-    Args:
-        terms: List of terms that may contain comma-separated values
-
-    Returns:
-        List of individual terms with whitespace stripped
-    """
+    """Split comma-separated terms into individual terms and clean them."""
     expanded = []
     for term in terms:
         if "," in term:
-            expanded.extend(t.strip() for t in term.split(","))
+            expanded.extend(t.strip() for t in term.split(",") if t.strip())
         else:
-            expanded.append(term.strip())
+            if term.strip():
+                expanded.append(term.strip())
     return expanded
 
 
@@ -179,73 +178,54 @@ async def handle_crawler_request(
     sources: Optional[str],
     crawler_class,
 ) -> CrawlerResponse:
-    """Handle common crawler request logic for both body and URL endpoints.
-
-    Args:
-        params: Common crawler parameters (max_articles, days_back, timeout, etc.)
-        include: Required keywords to include in search
-        exclude: Optional keywords to exclude from search (only used by UrlFilterCrawler)
-        sources: Comma-separated list of sources to crawl
-        crawler_class: Either BodyFilterCrawler or UrlFilterCrawler
-
-    Returns:
-        CrawlerResponse containing found articles and status message
-
-    Raises:
-        HTTPException: For various error conditions (400, 408, 422, 500, 503)
-    """
     try:
         print(f"API received timeout parameter: {params.timeout} seconds")
+        print(f"Include terms: {include}")
+        if exclude:
+            print(f"Exclude terms: {exclude}")
 
         # Parse and validate sources
         sources_list = parse_sources(sources, params.sources)
-        sources = get_sources(sources_list)
+        print(f"Parsed sources: {sources_list}")
 
-        print(f"Creating crawler with timeout: {params.timeout} seconds")
-        if crawler_class == UrlFilterCrawler:
-            # Only pass exclude terms if they are provided and not empty
-            exclude_terms = exclude if exclude and len(exclude) > 0 else []
-            print(f"URL crawler exclude terms: {exclude_terms}")
+        if app.state.use_mock:
+            from crawlers.mock_crawler import MockCrawler
+
+            crawler = MockCrawler(
+                sources_list,  # Pass the source names directly
+                params.max_articles,
+                params.days_back,
+                include,
+                exclude,
+                timeout_seconds=params.timeout,
+            )
+        else:
+            sources = get_sources(sources_list)
             crawler = crawler_class(
                 sources,
                 params.max_articles,
                 params.days_back,
                 include,
-                exclude_terms,
-                timeout_seconds=params.timeout,
-            )
-        else:  # BodyFilterCrawler
-            crawler = crawler_class(
-                sources,
-                params.max_articles,
-                params.days_back,
-                include,
+                exclude if crawler_class.__name__ == "UrlFilterCrawler" else None,
                 timeout_seconds=params.timeout,
             )
 
-        # Run crawler with appropriate display settings
-        display_output = (
-            crawler_class == BodyFilterCrawler
-        )  # Only show output for body crawler
-        articles = crawler.run_crawler(
-            display_output=display_output,
-            show_body=False,  # Don't show article bodies in API mode
-        )
+        articles = await run_in_threadpool(crawler.run_crawler, display_output=True)
         print(f"Crawler returned {len(articles)} articles")
 
         # Process articles
         processed_articles = []
-        for i, article in enumerate(articles):
+        for article in articles:
             try:
-                processed_article = article_to_dict(article)
-                processed_articles.append(processed_article)
+                article_dict = article_to_dict(article)
+                processed_articles.append(ArticleResponse(**article_dict))
             except Exception as e:
-                print(f"Error processing article {i}: {type(e).__name__}: {str(e)}")
+                print(f"Error processing article: {type(e).__name__}: {str(e)}")
                 continue
 
         return CrawlerResponse(
-            message=f"{crawler_class.__name__} completed with {len(processed_articles)} article(s) found",
             articles=processed_articles,
+            message=f"Found {len(processed_articles)} article(s)",
         )
 
     except Exception as e:
@@ -286,12 +266,10 @@ async def crawl_body(
 async def crawl_url(
     params: CrawlerParams = Depends(),
     include: List[str] = Query(
-        ...,
-        description="Required keywords to include in URL search (comma-separated or multiple parameters)",
+        ..., description="Required keywords to include in search"
     ),
-    exclude: List[str] = Query(
-        [],
-        description="Terms to filter out from URL (comma-separated or multiple parameters)",
+    exclude: Optional[List[str]] = Query(
+        None, description="Optional keywords to exclude from search"
     ),
     sources: Optional[str] = Query(
         None,
@@ -299,10 +277,10 @@ async def crawl_url(
     ),
 ):
     expanded_include = expand_terms(include)
-    expanded_exclude = expand_terms(exclude)
-
+    expanded_exclude = expand_terms(exclude) if exclude else None
     print(f"Include terms: {expanded_include}")
-    print(f"Exclude terms: {expanded_exclude}")
+    if expanded_exclude:
+        print(f"Exclude terms: {expanded_exclude}")
 
     return await handle_crawler_request(
         params,
