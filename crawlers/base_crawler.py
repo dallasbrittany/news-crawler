@@ -112,7 +112,6 @@ class BaseCrawler(ABC):
             [sources] if not isinstance(sources, (list, tuple)) else list(sources)
         )
         print("\nProcessing crawler initialization...")
-        # print(f"Source input type: {type(sources)}")
         formatted_sources = format_sources(sources_list)
         if formatted_sources:
             print("\nInitialized crawler with sources:")
@@ -120,14 +119,36 @@ class BaseCrawler(ABC):
         else:
             print("\nWARNING: No valid sources found during initialization")
 
-        # NOTE: adding restrict_sources_to=[Sitemap] makes The Guardian not work
-        self.crawler = Crawler(sources_list)
+        # Create a session for connection pooling
+        self.session = requests.Session()
+        # Configure the session for connection pooling
+        adapter = requests.adapters.HTTPAdapter(
+            pool_connections=100,  # Number of connection pools to cache
+            pool_maxsize=100,  # Maximum number of connections to save in the pool
+            max_retries=3,  # Number of retries for failed requests
+            pool_block=False,  # Don't block when pool is full
+        )
+        self.session.mount("http://", adapter)
+        self.session.mount("https://", adapter)
+
+        # Pass the session to the crawler
+        self.crawler = Crawler(sources_list, session=self.session)
 
         self.max_articles = max_articles
         self.days = days
         self.timeout_seconds = timeout_seconds
         self.start_date = datetime.date.today() - datetime.timedelta(days=days)
         # TODO: Allow end date to be passed in instead of assuming it's today
+        # NOTE: adding restrict_sources_to=[Sitemap] makes The Guardian not work
+
+    def __del__(self):
+        """Ensure resources are cleaned up"""
+        if hasattr(self, "session"):
+            self.session.close()
+        if hasattr(self, "crawler"):
+            # Clean up the crawler if it has a cleanup method
+            if hasattr(self.crawler, "close"):
+                self.crawler.close()
 
     @abstractmethod
     def get_filter_params(self) -> Dict[str, Any]:
@@ -153,6 +174,7 @@ class BaseCrawler(ABC):
 
         # Set up the timeout handler
         if self.timeout_seconds:
+            original_handler = signal.getsignal(signal.SIGALRM)
             signal.signal(signal.SIGALRM, timeout_handler)
             signal.alarm(self.timeout_seconds)
             print(f"Set crawler timeout for {self.timeout_seconds} seconds")
@@ -256,6 +278,9 @@ class BaseCrawler(ABC):
         finally:
             if self.timeout_seconds:
                 signal.alarm(0)  # Disable the alarm
+                signal.signal(
+                    signal.SIGALRM, original_handler
+                )  # Restore original handler
 
         if display_output:
             print(f"\nCrawling completed. Found {len(articles)} articles.")
