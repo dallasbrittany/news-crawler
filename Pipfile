@@ -5,8 +5,12 @@ name = "pypi"
 
 [packages]
 fundus = "*"
+fastapi = "*"
+uvicorn = "*"
+pydantic = "*"
 
 [dev-packages]
+black = "*"
 
 [requires]
 python_version = "3.11"
