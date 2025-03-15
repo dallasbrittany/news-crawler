@@ -154,6 +154,24 @@ def parse_sources(
     return params_sources
 
 
+def expand_terms(terms: List[str]) -> List[str]:
+    """Split any comma-separated terms into a list of individual terms.
+
+    Args:
+        terms: List of terms that may contain comma-separated values
+
+    Returns:
+        List of individual terms with whitespace stripped
+    """
+    expanded = []
+    for term in terms:
+        if "," in term:
+            expanded.extend(t.strip() for t in term.split(","))
+        else:
+            expanded.append(term.strip())
+    return expanded
+
+
 async def handle_crawler_request(
     params: CrawlerParams,
     include: List[str],
@@ -186,11 +204,7 @@ async def handle_crawler_request(
         print(f"Creating crawler with timeout: {params.timeout} seconds")
         if crawler_class == UrlFilterCrawler:
             # Only pass exclude terms if they are provided and not empty
-            exclude_terms = (
-                exclude
-                if exclude and len(exclude) > 0
-                else []
-            )
+            exclude_terms = exclude if exclude and len(exclude) > 0 else []
             print(f"URL crawler exclude terms: {exclude_terms}")
             crawler = crawler_class(
                 sources,
@@ -259,9 +273,12 @@ async def crawl_body(
         description="Comma-separated list of sources to crawl (e.g., 'TheNewYorker,TheGuardian'). If not specified, uses all sources",
     ),
 ):
+    expanded_include = expand_terms(include)
+    print(f"Include terms: {expanded_include}")
+
     return await handle_crawler_request(
         params,
-        include,
+        expanded_include,
         exclude,
         sources,
         BodyFilterCrawler,
@@ -284,16 +301,6 @@ async def crawl_url(
         description="Comma-separated list of sources to crawl (e.g., 'TheNewYorker,TheGuardian'). If not specified, uses all sources",
     ),
 ):
-    # Split any comma-separated terms for both include and exclude
-    def expand_terms(terms):
-        expanded = []
-        for term in terms:
-            if "," in term:
-                expanded.extend(t.strip() for t in term.split(","))
-            else:
-                expanded.append(term.strip())
-        return expanded
-
     expanded_include = expand_terms(include)
     expanded_exclude = expand_terms(exclude)
 
