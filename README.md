@@ -39,7 +39,7 @@ python main.py cli --crawler url --include Apple technology --exclude AI
 
 Use a timeout to limit how long the crawler runs and return partial results collected:
 ```
-python main.py cli --crawler body --include climate --timeout 30  # Stop after 30 seconds
+python main.py cli --crawler body --include climate --timeout 30
 ```
 
 Required arguments:
@@ -125,6 +125,7 @@ black --diff .
 
 ## Future Work
 - General code improvements and find anything weird introduced by AI
+- Handle this: `Unexpected error processing article: OSError: [Errno 24] Too many open files`
 - Add end_date as option to pass in (and rename days_back to start_date)
 - It's matching on part of words (so `threefold` matches `reef`), which isn't helpful in many cases
 - Make some more useful preset searches like daily essential news or favorite subjects
