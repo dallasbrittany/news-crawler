@@ -156,7 +156,7 @@ def parse_sources(
 
 async def handle_crawler_request(
     params: CrawlerParams,
-    keywords_include: List[str],
+    include: List[str],
     exclude: Optional[List[str]],
     sources: Optional[str],
     crawler_class,
@@ -165,7 +165,7 @@ async def handle_crawler_request(
 
     Args:
         params: Common crawler parameters (max_articles, days_back, timeout, etc.)
-        keywords_include: Required keywords to include in search
+        include: Required keywords to include in search
         exclude: Optional keywords to exclude from search (only used by UrlFilterCrawler)
         sources: Comma-separated list of sources to crawl
         crawler_class: Either BodyFilterCrawler or UrlFilterCrawler
@@ -196,7 +196,7 @@ async def handle_crawler_request(
                 sources,
                 params.max_articles,
                 params.days_back,
-                keywords_include,
+                include,
                 exclude_terms,
                 timeout_seconds=params.timeout,
             )
@@ -205,7 +205,7 @@ async def handle_crawler_request(
                 sources,
                 params.max_articles,
                 params.days_back,
-                keywords_include,
+                include,
                 timeout_seconds=params.timeout,
             )
 
@@ -248,7 +248,7 @@ async def handle_crawler_request(
 @app.get("/crawl/body", response_model=CrawlerResponse)
 async def crawl_body(
     params: CrawlerParams = Depends(),
-    keywords_include: List[str] = Query(
+    include: List[str] = Query(
         ..., description="Required keywords to include in search"
     ),
     exclude: Optional[List[str]] = Query(
@@ -261,7 +261,7 @@ async def crawl_body(
 ):
     return await handle_crawler_request(
         params,
-        keywords_include,
+        include,
         exclude,
         sources,
         BodyFilterCrawler,
@@ -271,7 +271,7 @@ async def crawl_body(
 @app.get("/crawl/url", response_model=CrawlerResponse)
 async def crawl_url(
     params: CrawlerParams = Depends(),
-    keywords_include: List[str] = Query(
+    include: List[str] = Query(
         ...,
         description="Required keywords to include in URL search (comma-separated or multiple parameters)",
     ),
@@ -294,7 +294,7 @@ async def crawl_url(
                 expanded.append(term.strip())
         return expanded
 
-    expanded_include = expand_terms(keywords_include)
+    expanded_include = expand_terms(include)
     expanded_exclude = expand_terms(exclude)
 
     print(f"Include terms: {expanded_include}")

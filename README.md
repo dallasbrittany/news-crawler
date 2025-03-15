@@ -70,7 +70,7 @@ Available endpoints:
 - `/crawl/url` - Search articles by URL text
 
 Required parameters:
-- `keywords_include`: Keywords to include in search (required). Can be provided either as multiple parameters or comma-separated values.
+- `include`: Keywords to include in search (required). Can be provided either as multiple parameters or comma-separated values.
 
 Optional parameters:
 - `max_articles`: Maximum number of articles to retrieve (optional)
@@ -84,24 +84,24 @@ Example API calls:
 # Search for articles about climate and pollution (uses default 25 second timeout)
 
 # Method 1: Multiple parameters
-curl "http://localhost:8000/crawl/body?max_articles=5&keywords_include=climate&keywords_include=pollution"
+curl "http://localhost:8000/crawl/body?max_articles=5&include=climate&include=pollution"
 
 # Method 2: Comma-separated (same result as above)
-curl "http://localhost:8000/crawl/body?max_articles=5&keywords_include=climate,pollution"
+curl "http://localhost:8000/crawl/body?max_articles=5&include=climate,pollution"
 
 # Search for environmental articles with spaces in terms (URL-encoded)
-curl "http://localhost:8000/crawl/body?sources=TheGuardian&keywords_include=environmental,climate%20crisis,coral%20reef"
+curl "http://localhost:8000/crawl/body?sources=TheGuardian&include=environmental,climate%20crisis,coral%20reef"
 
 # Search for technology articles with a custom timeout and multiple sources
-curl "http://localhost:8000/crawl/body?sources=TheNewYorker,TheGuardian&keywords_include=technology&timeout=60"
+curl "http://localhost:8000/crawl/body?sources=TheNewYorker,TheGuardian&include=technology&timeout=60"
 
 # Search for climate articles from The Guardian, excluding opinion and podcast pieces with URL filtering
-curl "http://localhost:8000/crawl/url?sources=TheGuardian&keywords_include=climate&exclude=opinion,podcast"
+curl "http://localhost:8000/crawl/url?sources=TheGuardian&include=climate&exclude=opinion,podcast"
 ```
 
-For both `keywords_include` and `exclude` in API calls, you can provide terms in two ways (at least for now):
-1. Multiple parameters: `keywords_include=term1&keywords_include=term2`
-2. Comma-separated: `keywords_include=term1,term2`
+For both `include` and `exclude` in API calls, you can provide terms in two ways (at least for now):
+1. Multiple parameters: `include=term1&include=term2`
+2. Comma-separated: `include=term1,term2`
 
 ### Code Formatting
 This project uses Black for code formatting. To format your code:
