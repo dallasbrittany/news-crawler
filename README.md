@@ -4,6 +4,29 @@ Uses `fundus` for news crawling and includes both a CLI mode and an API mode. Th
 
 If you use this tool, please use it responsibly. Data isn't free, and neither is journalism.
 
+## Immediate Issues
+
+### Broken
+- The two CLI examples in the readme don't return any articles
+  - `python main.py cli --crawler body --include climate --mock` should though -- probably the AI left out stuff for CLI mode the way it did for API mode at first
+- `python main.py cli --crawler url --include technology --exclude AI --mock` won't return anything because the full work `technology` isn't in one of the URLs so `tech` would work better -- but that doesn't return anything either probably because of the above issue
+- Reword `Keyword filtering (include/exclude terms)` to just say `Keyword filtering`
+- The description for `exclude` doesn't mention it's only for URL mode
+
+### Could Use Improvements
+- `ArticleResponse` publishing date is Any type now instead of string
+- Seems repetitive the way it's doing `if t.strip()` so much
+- Why'd it get rid of the doc string for `handle_crawler_request`?
+- The way max articles is implemented for mock data isn't what I'd expect, but it's probably good enough for mock data for now
+- It'd be nice to be able to simulate the timeout properly with mock data, but that can be done later if it seems useful enough
+
+### To Verify
+- Should `ArticleResponse` authors be optional?
+- Does `exclude` work right? What if it's not included?
+- How does `run_in_threadpool` work?
+- Does this make sense? `Skip the parent class __init__ since we don't need the actual crawler`
+- What if you don't pass in source names to the mock crawler?
+
 ## Usage
 - Install with `pipenv` with the Python version specified in `.python-version` -- see bottom of this file for some `pipenv` tips.
 - The crawler can be run in two modes: CLI or API. The CLI mode is mainly for quickly experimenting and watching headlines scroll by. The API mode has been added so a UI can be built to connect to it for easier viewing of the articles.
@@ -27,7 +50,7 @@ For terms containing spaces:
 
 ### Mock Mode
 
-For testing and development purposes, you can run the crawler in mock mode. This mode uses predefined test data instead of making real network requests, which is useful for:
+For testing and development purposes, you can run the crawler in mock mode. This mode uses predefined test data instead of making real network requests, which is useful for the following:
 - Offline development and testing
 - Faster response times
 - Consistent, predictable results
