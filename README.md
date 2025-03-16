@@ -7,9 +7,7 @@ If you use this tool, please use it responsibly. Data isn't free, and neither is
 ## Immediate Issues
 
 ### Broken
-- The two CLI examples in the readme don't return any articles
-  - `python main.py cli --crawler body --include climate --mock` should though -- probably the AI left out stuff for CLI mode the way it did for API mode at first
-- `python main.py cli --crawler url --include technology --exclude AI --mock` won't return anything because the full work `technology` isn't in one of the URLs so `tech` would work better -- but that doesn't return anything either probably because of the above issue
+- `python main.py cli --crawler url --include technology --exclude AI --mock` won't return anything because the full work `technology` isn't in one of the URLs so `tech` would work better -- but it is now?
 - Reword `Keyword filtering (include/exclude terms)` to just say `Keyword filtering`
 - The description for `exclude` doesn't mention it's only for URL mode
 

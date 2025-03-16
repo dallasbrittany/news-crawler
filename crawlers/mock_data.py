@@ -7,14 +7,14 @@ MOCK_ARTICLES = [
         "title": "Climate Change: A Global Challenge",
         "url": "https://example.com/climate-change",
         "body": "Climate change continues to be a pressing issue. Scientists warn about rising temperatures and their impact on ecosystems. Recent studies show concerning trends in global warming.",
-        "source": "TheGuardian",
+        "source": "The Guardian",
         "publishing_date": datetime.now() - timedelta(days=1),
     },
     {
         "title": "Tech Giants Face New Regulations",
         "url": "https://example.com/tech-regulations",
-        "body": "Major technology companies are facing increased scrutiny over data privacy and market dominance. Lawmakers propose new regulations to address concerns. Will it do any good? Who knows. Time will tell.",
-        "source": "TheNewYorker",
+        "body": "Major technology companies are facing increased scrutiny over data privacy and market dominance. Lawmakers propose new regulations to address concerns.",
+        "source": "The New Yorker",
         "publishing_date": datetime.now() - timedelta(days=2),
     },
     {
@@ -28,14 +28,14 @@ MOCK_ARTICLES = [
         "title": "Healthcare Innovation During Pandemic",
         "url": "https://example.com/healthcare-innovation",
         "body": "The healthcare sector has seen rapid innovation in response to global challenges. Telemedicine and digital health solutions become mainstream.",
-        "source": "TheGuardian",
+        "source": "The Guardian",
         "publishing_date": datetime.now() - timedelta(days=4),
     },
     {
         "title": "Sustainable Energy Solutions",
         "url": "https://example.com/sustainable-energy",
         "body": "Renewable energy adoption continues to grow worldwide. Solar and wind power installations reach record levels as costs decrease.",
-        "source": "TheNewYorker",
+        "source": "The New Yorker",
         "publishing_date": datetime.now() - timedelta(days=5),
     },
 ]
@@ -89,34 +89,43 @@ def get_mock_articles(
     filtered_articles = []
     cutoff_date = datetime.now() - timedelta(days=days_back)
 
-    print(f"Mock data searching with terms: {include_terms}")
+    print(f"\nMock data searching with terms: {include_terms}")
     print(f"Sources filter: {sources}")
 
     for article_data in MOCK_ARTICLES:
         # Filter by date
         if article_data["publishing_date"] < cutoff_date:
+            print(f"Skipping article '{article_data['title']}' - too old")
             continue
 
         # Filter by source if specified
         if sources and article_data["source"] not in sources:
+            print(f"Skipping article '{article_data['title']}' - source {article_data['source']} not in {sources}")
             continue
 
         # Check include terms (any term must match)
         article_text = f"{article_data['title']} {article_data['body']}".lower()
-        if not any(term.lower() in article_text for term in include_terms):
+        matched_terms = [term for term in include_terms if term.lower() in article_text]
+        if not matched_terms:
+            print(f"Skipping article '{article_data['title']}' - no matching terms")
             continue
+        else:
+            print(f"Article '{article_data['title']}' matched terms: {matched_terms}")
 
         # Check exclude terms if specified
-        if exclude_terms and any(
-            term.lower() in article_text for term in exclude_terms
-        ):
-            continue
+        if exclude_terms:
+            excluded_terms = [term for term in exclude_terms if term.lower() in article_text]
+            if excluded_terms:
+                print(f"Skipping article '{article_data['title']}' - matched exclude terms: {excluded_terms}")
+                continue
 
         filtered_articles.append(MockArticle(article_data))
 
     # Apply max_articles limit if specified
     if max_articles is not None:
         filtered_articles = filtered_articles[:max_articles]
+        if len(filtered_articles) > max_articles:
+            print(f"Limiting to {max_articles} articles")
 
-    print(f"Mock data found {len(filtered_articles)} matching articles")
+    print(f"\nMock data found {len(filtered_articles)} matching articles")
     return filtered_articles

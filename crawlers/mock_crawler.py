@@ -22,6 +22,23 @@ class MockCrawler(BaseCrawler):
         self.exclude_terms = exclude_terms or []
         self.timeout_seconds = timeout_seconds
 
+    def _extract_source_names(self, sources) -> List[str]:
+        """Extract source names from source objects or collections."""
+        source_names = set()
+        for source in sources:
+            # If it's a collection (like PublisherCollection.us)
+            if hasattr(source, '__dict__'):
+                for name, publisher in vars(source).items():
+                    if not name.startswith('__') and hasattr(publisher, 'name'):
+                        source_names.add(publisher.name)
+            # If it's a direct publisher object
+            elif hasattr(source, 'name'):
+                source_names.add(source.name)
+            # If it's already a string
+            elif isinstance(source, str):
+                source_names.add(source)
+        return list(source_names)
+
     def get_filter_params(self) -> Dict[str, Any]:
         # Not used in mock crawler
         return {}
@@ -34,20 +51,17 @@ class MockCrawler(BaseCrawler):
             if self.exclude_terms:
                 print("Exclude terms:", self.exclude_terms)
 
-        # Convert sources to source names if needed
-        source_names = []
-        for source in self.sources:
-            if hasattr(source, "name"):
-                source_names.append(source.name)
-            else:
-                source_names.append(str(source))
+        # Get source names
+        source_names = self._extract_source_names(self.sources)
+        if display_output:
+            print(f"Using sources: {source_names}")
 
         articles = get_mock_articles(
             include_terms=self.search_terms,
             exclude_terms=self.exclude_terms,
             max_articles=self.max_articles,
             days_back=self.days,
-            sources=source_names if source_names else None,
+            sources=source_names,
         )
 
         if display_output:
