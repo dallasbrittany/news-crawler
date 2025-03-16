@@ -187,6 +187,7 @@ black --diff .
 ## Future Work
 - General code improvements and find anything weird introduced by AI
 - Handle this: `Unexpected error processing article: OSError: [Errno 24] Too many open files`
+- Handle more than one request at a time
 - Add end_date as option to pass in (and rename days_back to start_date)
 - It's matching on part of words (so `threefold` matches `reef`), which isn't helpful in many cases
 - Make some more useful preset searches like daily essential news or favorite subjects
