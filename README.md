@@ -5,20 +5,15 @@ Uses `fundus` for news crawling and includes both a CLI mode and an API mode. Th
 If you use this tool, please use it responsibly. Data isn't free, and neither is journalism.
 
 ## Immediate Issues
-None right now.
+- Update readme
 
 ### Could Use Improvements
-- Seems repetitive the way it's doing `if t.strip()` so much
+- Seems repetitive the way it's doing `if t.strip()` so much; also remove other repetitive things
 - Why'd it get rid of the doc string for `handle_crawler_request`?
-- The way max articles is implemented for mock data isn't what I'd expect, but it's probably good enough for mock data for now
-- It'd be nice to be able to simulate the timeout properly with mock data, but that can be done later if it seems useful enough
 
 ### To Verify
 - Should `ArticleResponse` authors be optional?
-- Does `exclude` work right? What if it's not included?
 - How does `run_in_threadpool` work?
-- Does this make sense? `Skip the parent class __init__ since we don't need the actual crawler`
-- What if you don't pass in source names to the mock crawler?
 - `is_whole_word_match`
 
 ## Usage
@@ -191,6 +186,7 @@ black --diff .
 - Sentiment analysis would be really useful
 - Making it work properly with news in other languages would be nice
 - Improve date filtering when doing URL search
+- It'd be nice to be able to simulate the timeout properly with mock data, but that can be done later if it seems useful enough
 
 ## Resources
 - [fundus](https://github.com/flairNLP/fundus) and [fundus supported publishers](https://github.com/flairNLP/fundus/blob/master/docs/supported_publishers.md)
