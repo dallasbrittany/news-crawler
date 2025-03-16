@@ -127,5 +127,8 @@ def get_mock_articles(
         if len(filtered_articles) > max_articles:
             print(f"Limiting to {max_articles} articles")
 
-    print(f"\nMock data found {len(filtered_articles)} matching articles")
+    print(f"\nMock data found {len(filtered_articles)} matching article(s)")
+    for article in filtered_articles:
+        # Print in format "- Title: url, date"
+        print(f"- {article.title}: {article.url}, {article.publishing_date}")
     return filtered_articles

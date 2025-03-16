@@ -65,6 +65,6 @@ class MockCrawler(BaseCrawler):
         )
 
         if display_output:
-            print(f"\nFound {len(articles)} mock articles")
+            print(f"\nFound {len(articles)} mock article(s)")
 
         return articles
