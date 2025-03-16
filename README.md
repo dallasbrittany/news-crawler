@@ -7,7 +7,6 @@ If you use this tool, please use it responsibly. Data isn't free, and neither is
 ## Immediate Issues
 
 ### Could Use Improvements
-- `ArticleResponse` publishing date is Any type now instead of string
 - Seems repetitive the way it's doing `if t.strip()` so much
 - Why'd it get rid of the doc string for `handle_crawler_request`?
 - The way max articles is implemented for mock data isn't what I'd expect, but it's probably good enough for mock data for now

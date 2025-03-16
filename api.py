@@ -2,6 +2,7 @@ from fastapi import FastAPI, Query, HTTPException, Depends
 from fastapi.concurrency import run_in_threadpool
 from typing import List, Optional, Dict, Any
 from pydantic import BaseModel, field_validator, Field
+from datetime import datetime
 from fundus import PublisherCollection, Article
 from crawlers import BodyFilterCrawler, UrlFilterCrawler
 from crawlers.base_crawler import (
@@ -21,7 +22,7 @@ app = FastAPI(
 class ArticleResponse(BaseModel):
     title: str
     url: str
-    publishing_date: Any  # Changed from str to Any to handle datetime
+    publishing_date: datetime
     body: str
     authors: Optional[List[str]] = []  # Made optional with default empty list
 
@@ -83,14 +84,20 @@ def handle_crawler_error(e: Exception) -> Dict[str, Any]:
 def article_to_dict(article: Article) -> Dict[str, Any]:
     """Convert an article to a dictionary format matching ArticleResponse."""
     try:
+        # Ensure publishing_date is a datetime object
+        if isinstance(article.publishing_date, str):
+            # If it's a string, try to parse it as a datetime
+            pub_date = datetime.fromisoformat(article.publishing_date.replace('Z', '+00:00'))
+        else:
+            # If it's already a datetime or similar, use it as is
+            pub_date = article.publishing_date
+
         return {
             "title": article.title,
-            "url": (
-                article.url if hasattr(article, "url") else article.html.requested_url
-            ),
-            "publishing_date": article.publishing_date,
+            "url": article.url if hasattr(article, 'url') else article.html.requested_url,
+            "publishing_date": pub_date,
             "body": article.body,
-            "authors": getattr(article, "authors", []),
+            "authors": getattr(article, 'authors', []),
         }
     except AttributeError as e:
         print(f"Error processing article: {str(e)}")
