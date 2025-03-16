@@ -6,10 +6,6 @@ If you use this tool, please use it responsibly. Data isn't free, and neither is
 
 ## Immediate Issues
 
-### Broken
-- Reword `Keyword filtering (include/exclude terms)` to just say `Keyword filtering`
-- The description for `exclude` doesn't mention it's only for URL mode
-
 ### Could Use Improvements
 - `ArticleResponse` publishing date is Any type now instead of string
 - Seems repetitive the way it's doing `if t.strip()` so much
@@ -79,7 +75,7 @@ The mock data includes example articles about:
 - Sustainable energy
 
 Mock mode supports all the same filtering options as the real crawler:
-- Keyword filtering (include/exclude terms)
+- Keyword filtering
 - Date filtering
 - Source filtering (TheGuardian, TheNewYorker, Wired)
 - Article limit
@@ -107,7 +103,7 @@ Required arguments:
 Optional arguments:
 - `--max_articles`: Maximum number of articles to retrieve (default: unlimited).
 - `--days_back`: Number of days back to search (default: 7).
-- `--exclude`: List of keywords to exclude from the search (only works with URL crawler).
+- `--exclude`: List of keywords to exclude from URLs (only works with URL crawler, not body search).
 - `--timeout`: Maximum number of seconds to run the query (optional, no default timeout). When reached, returns articles collected up to that point.
 - `--sources`: List of news sources to crawl (e.g., TheNewYorker, TheGuardian). If not specified, uses all US, UK, Australian, and Canadian sources.
 
@@ -134,7 +130,7 @@ Required parameters:
 Optional parameters:
 - `max_articles`: Maximum number of articles to retrieve (optional)
 - `days_back`: Days to look back (default: 7)
-- `exclude`: Keywords to exclude from search (only works with /crawl/url endpoint)
+- `exclude`: Keywords to exclude from URLs (only works with /crawl/url endpoint, not with /crawl/body)
 - `timeout`: Maximum number of seconds to run the query (default: 25 seconds). When reached, returns articles collected up to that point.
 - `sources`: Comma-separated list of news sources to crawl (e.g., 'TheNewYorker,TheGuardian'). If not specified, uses all US, UK, Australian, and Canadian sources
 

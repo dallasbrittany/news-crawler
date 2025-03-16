@@ -163,7 +163,7 @@ if __name__ == "__main__":
         "--include", nargs="+", help="List of keywords to include in the search"
     )
     parser.add_argument(
-        "--exclude", nargs="+", help="List of keywords to exclude from the search"
+        "--exclude", nargs="+", help="List of keywords to exclude from URL search"
     )
     parser.add_argument(
         "--timeout",
