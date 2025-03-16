@@ -86,6 +86,7 @@ def main(
 
         if use_mock:
             from crawlers.mock_crawler import MockCrawler
+
             crawler = MockCrawler(
                 crawler_sources,
                 max_articles,
@@ -96,6 +97,7 @@ def main(
             )
         else:
             from crawlers import BodyFilterCrawler
+
             crawler = BodyFilterCrawler(
                 crawler_sources,
                 max_articles,
@@ -110,6 +112,7 @@ def main(
 
         if use_mock:
             from crawlers.mock_crawler import MockCrawler
+
             url_filter_crawler = MockCrawler(
                 crawler_sources,
                 max_articles,

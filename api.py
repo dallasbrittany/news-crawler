@@ -87,17 +87,21 @@ def article_to_dict(article: Article) -> Dict[str, Any]:
         # Ensure publishing_date is a datetime object
         if isinstance(article.publishing_date, str):
             # If it's a string, try to parse it as a datetime
-            pub_date = datetime.fromisoformat(article.publishing_date.replace('Z', '+00:00'))
+            pub_date = datetime.fromisoformat(
+                article.publishing_date.replace("Z", "+00:00")
+            )
         else:
             # If it's already a datetime or similar, use it as is
             pub_date = article.publishing_date
 
         return {
             "title": article.title,
-            "url": article.url if hasattr(article, 'url') else article.html.requested_url,
+            "url": (
+                article.url if hasattr(article, "url") else article.html.requested_url
+            ),
             "publishing_date": pub_date,
             "body": article.body,
-            "authors": getattr(article, 'authors', []),
+            "authors": getattr(article, "authors", []),
         }
     except AttributeError as e:
         print(f"Error processing article: {str(e)}")

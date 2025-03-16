@@ -29,12 +29,12 @@ class MockCrawler(BaseCrawler):
         source_names = set()
         for source in sources:
             # If it's a collection (like PublisherCollection.us)
-            if hasattr(source, '__dict__'):
+            if hasattr(source, "__dict__"):
                 for name, publisher in vars(source).items():
-                    if not name.startswith('__') and hasattr(publisher, 'name'):
+                    if not name.startswith("__") and hasattr(publisher, "name"):
                         source_names.add(publisher.name)
             # If it's a direct publisher object
-            elif hasattr(source, 'name'):
+            elif hasattr(source, "name"):
                 source_names.add(source.name)
             # If it's already a string
             elif isinstance(source, str):
