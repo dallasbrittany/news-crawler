@@ -15,6 +15,7 @@ MOCK_ARTICLES = [
         "body": "Climate change continues to be a pressing issue. Scientists warn about rising temperatures and their impact on ecosystems. Recent studies show concerning trends in global warming.",
         "source": "The Guardian",
         "publishing_date": datetime.now() - timedelta(days=1),
+        "authors": ["Emma Thompson", "James Wilson"],
     },
     {
         "title": "Tech Giants Face New Regulations",
@@ -22,6 +23,7 @@ MOCK_ARTICLES = [
         "body": "Major technology companies are facing increased scrutiny over data privacy and market dominance. Lawmakers propose new regulations to address concerns.",
         "source": "The New Yorker",
         "publishing_date": datetime.now() - timedelta(days=2),
+        "authors": ["Sarah Chen"],
     },
     {
         "title": "Advances in AI Technology",
@@ -29,6 +31,7 @@ MOCK_ARTICLES = [
         "body": "Artificial intelligence continues to evolve with new breakthroughs in machine learning and neural networks. Researchers develop more efficient algorithms.",
         "source": "Wired",
         "publishing_date": datetime.now() - timedelta(days=3),
+        "authors": ["Michael Rodriguez", "David Kim", "Lisa Patel"],
     },
     {
         "title": "Healthcare Innovation During Pandemic",
@@ -36,6 +39,7 @@ MOCK_ARTICLES = [
         "body": "The healthcare sector has seen rapid innovation in response to global challenges. Telemedicine and digital health solutions become mainstream.",
         "source": "The Guardian",
         "publishing_date": datetime.now() - timedelta(days=4),
+        "authors": ["Dr. Rachel Foster"],
     },
     {
         "title": "Sustainable Energy Solutions",
@@ -43,6 +47,7 @@ MOCK_ARTICLES = [
         "body": "Renewable energy adoption continues to grow worldwide. Solar and wind power installations reach record levels as costs decrease.",
         "source": "The New Yorker",
         "publishing_date": datetime.now() - timedelta(days=5),
+        "authors": ["Alex Green", "Maria Santos"],
     },
 ]
 
@@ -54,7 +59,7 @@ class MockArticle:
         self._body = data["body"]
         self._source = data["source"]
         self._publishing_date = data["publishing_date"]
-        self._authors = []
+        self._authors = data.get("authors", [])  # Use get() with default empty list
         self.html = type("HTML", (), {"requested_url": data["url"]})()
 
     @property

@@ -5,6 +5,7 @@ Uses `fundus` for news crawling and includes both a CLI mode and an API mode. Th
 If you use this tool, please use it responsibly. Data isn't free, and neither is journalism.
 
 ## Immediate Issues
+None right now.
 
 ### Could Use Improvements
 - Seems repetitive the way it's doing `if t.strip()` so much
@@ -57,7 +58,7 @@ To use mock mode:
 python main.py cli --crawler body --include climate --mock
 
 # Search URLs with mock data
-python main.py cli --crawler url --include techg --exclude AI --mock
+python main.py cli --crawler url --include tech --exclude AI --mock
 ```
 
 2. API Mode with mock data:

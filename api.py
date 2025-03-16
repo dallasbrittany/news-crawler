@@ -256,6 +256,8 @@ async def handle_crawler_request(
                 include,
                 exclude,
                 timeout_seconds=params.timeout,
+                is_url_search=crawler_class.__name__
+                == "UrlFilterCrawler",  # Set based on crawler type
             )
         else:
             sources = get_sources(sources_list)
