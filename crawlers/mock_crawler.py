@@ -13,6 +13,7 @@ class MockCrawler(BaseCrawler):
         search_terms: List[str],
         exclude_terms: Optional[List[str]] = None,
         timeout_seconds: Optional[int] = None,
+        is_url_search: bool = False,
     ):
         # Skip the parent class __init__ since we don't need the actual crawler
         self.sources = sources if isinstance(sources, (list, tuple)) else [sources]
@@ -21,6 +22,7 @@ class MockCrawler(BaseCrawler):
         self.search_terms = search_terms
         self.exclude_terms = exclude_terms or []
         self.timeout_seconds = timeout_seconds
+        self.is_url_search = is_url_search
 
     def _extract_source_names(self, sources) -> List[str]:
         """Extract source names from source objects or collections."""
@@ -62,6 +64,7 @@ class MockCrawler(BaseCrawler):
             max_articles=self.max_articles,
             days_back=self.days,
             sources=source_names,
+            is_url_search=self.is_url_search,
         )
 
         if display_output:

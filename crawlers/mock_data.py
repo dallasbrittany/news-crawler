@@ -82,6 +82,7 @@ def get_mock_articles(
     max_articles: Optional[int] = None,
     days_back: int = 7,
     sources: Optional[List[str]] = None,
+    is_url_search: bool = False,
 ) -> List[Article]:
     """
     Filter and return mock articles based on search criteria.
@@ -91,6 +92,13 @@ def get_mock_articles(
 
     print(f"\nMock data searching with terms: {include_terms}")
     print(f"Sources filter: {sources}")
+    print(f"Search type: {'URL' if is_url_search else 'Body'}")
+
+    def is_whole_word_match(term: str, text: str) -> bool:
+        """Check if term appears as a whole word in text."""
+        import re
+        pattern = r'\b' + re.escape(term.lower()) + r'\b'
+        return bool(re.search(pattern, text.lower()))
 
     for article_data in MOCK_ARTICLES:
         # Filter by date
@@ -103,20 +111,25 @@ def get_mock_articles(
             print(f"Skipping article '{article_data['title']}' - source {article_data['source']} not in {sources}")
             continue
 
+        # For URL search, only look at the URL
+        if is_url_search:
+            search_text = article_data["url"]
+        else:
+            search_text = f"{article_data['title']} {article_data['body']}"
+
         # Check include terms (any term must match)
-        article_text = f"{article_data['title']} {article_data['body']}".lower()
-        matched_terms = [term for term in include_terms if term.lower() in article_text]
+        matched_terms = [term for term in include_terms if is_whole_word_match(term, search_text)]
         if not matched_terms:
-            print(f"Skipping article '{article_data['title']}' - no matching terms")
+            print(f"Skipping article '{article_data['title']}' - no matching terms in {'URL' if is_url_search else 'content'}")
             continue
         else:
-            print(f"Article '{article_data['title']}' matched terms: {matched_terms}")
+            print(f"Article '{article_data['title']}' matched terms in {'URL' if is_url_search else 'content'}: {matched_terms}")
 
         # Check exclude terms if specified
         if exclude_terms:
-            excluded_terms = [term for term in exclude_terms if term.lower() in article_text]
+            excluded_terms = [term for term in exclude_terms if is_whole_word_match(term, search_text)]
             if excluded_terms:
-                print(f"Skipping article '{article_data['title']}' - matched exclude terms: {excluded_terms}")
+                print(f"Skipping article '{article_data['title']}' - matched exclude terms in {'URL' if is_url_search else 'content'}: {excluded_terms}")
                 continue
 
         filtered_articles.append(MockArticle(article_data))

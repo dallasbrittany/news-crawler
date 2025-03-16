@@ -7,7 +7,6 @@ If you use this tool, please use it responsibly. Data isn't free, and neither is
 ## Immediate Issues
 
 ### Broken
-- `python main.py cli --crawler url --include technology --exclude AI --mock` won't return anything because the full work `technology` isn't in one of the URLs so `tech` would work better -- but it is now?
 - Reword `Keyword filtering (include/exclude terms)` to just say `Keyword filtering`
 - The description for `exclude` doesn't mention it's only for URL mode
 
@@ -24,6 +23,7 @@ If you use this tool, please use it responsibly. Data isn't free, and neither is
 - How does `run_in_threadpool` work?
 - Does this make sense? `Skip the parent class __init__ since we don't need the actual crawler`
 - What if you don't pass in source names to the mock crawler?
+- `is_whole_word_match`
 
 ## Usage
 - Install with `pipenv` with the Python version specified in `.python-version` -- see bottom of this file for some `pipenv` tips.
@@ -62,7 +62,7 @@ To use mock mode:
 python main.py cli --crawler body --include climate --mock
 
 # Search URLs with mock data
-python main.py cli --crawler url --include technology --exclude AI --mock
+python main.py cli --crawler url --include techg --exclude AI --mock
 ```
 
 2. API Mode with mock data:

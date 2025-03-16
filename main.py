@@ -86,17 +86,16 @@ def main(
 
         if use_mock:
             from crawlers.mock_crawler import MockCrawler
-
             crawler = MockCrawler(
                 crawler_sources,
                 max_articles,
                 days_back,
                 keywords_include,
                 timeout_seconds=timeout,
+                is_url_search=False,  # Body search
             )
         else:
             from crawlers import BodyFilterCrawler
-
             crawler = BodyFilterCrawler(
                 crawler_sources,
                 max_articles,
@@ -111,7 +110,6 @@ def main(
 
         if use_mock:
             from crawlers.mock_crawler import MockCrawler
-
             url_filter_crawler = MockCrawler(
                 crawler_sources,
                 max_articles,
@@ -119,6 +117,7 @@ def main(
                 keywords_include,
                 keywords_exclude or [],
                 timeout_seconds=timeout,
+                is_url_search=True,  # URL search
             )
         else:
             from crawlers import UrlFilterCrawler
