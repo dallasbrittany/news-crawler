@@ -25,6 +25,7 @@ class ArticleResponse(BaseModel):
     publishing_date: datetime
     body: str
     authors: Optional[List[str]] = []  # Made optional with default empty list
+    source: str
 
 
 class CrawlerResponse(BaseModel):
@@ -133,6 +134,7 @@ def article_to_dict(article: Article) -> Dict[str, Any]:
             "publishing_date": pub_date,
             "body": article.body,
             "authors": getattr(article, "authors", []),
+            "source": article.source if hasattr(article, "source") else "",
         }
     except AttributeError as e:
         print(f"Error processing article: {str(e)}")
