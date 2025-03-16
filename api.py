@@ -18,6 +18,9 @@ app = FastAPI(
     version="1.0.0",
 )
 
+# Initialize app state
+app.state.use_mock = False
+
 
 class ArticleResponse(BaseModel):
     title: str
@@ -126,13 +129,16 @@ def article_to_dict(article: Article) -> Dict[str, Any]:
             # If it's already a datetime or similar, use it as is
             pub_date = article.publishing_date
 
+        # Convert body to string if it's not already
+        body = str(article.body) if hasattr(article, "body") else ""
+
         return {
             "title": article.title,
             "url": (
                 article.url if hasattr(article, "url") else article.html.requested_url
             ),
             "publishing_date": pub_date,
-            "body": article.body,
+            "body": body,
             "authors": getattr(article, "authors", []),
             "source": article.source if hasattr(article, "source") else "",
         }
@@ -255,7 +261,6 @@ async def handle_crawler_request(
                 params.days_back,
                 include,
                 exclude,
-                timeout_seconds=params.timeout,
                 is_url_search=crawler_class.__name__
                 == "UrlFilterCrawler",  # Set based on crawler type
             )
@@ -267,7 +272,6 @@ async def handle_crawler_request(
                 params.days_back,
                 include,
                 exclude if crawler_class.__name__ == "UrlFilterCrawler" else None,
-                timeout_seconds=params.timeout,
             )
 
         articles = await run_in_threadpool(crawler.run_crawler, display_output=True)
@@ -349,3 +353,10 @@ async def crawl_url(
         sources,
         UrlFilterCrawler,
     )
+
+
+@app.get("/mock/{state}")
+async def set_mock_state(state: bool):
+    """Toggle mock mode on/off."""
+    app.state.use_mock = state
+    return {"message": f"Mock mode set to: {state}"}
