@@ -2,6 +2,12 @@ from typing import List, Optional
 from datetime import datetime, timedelta
 from fundus import Article
 
+
+def normalize_source_name(name: str) -> str:
+    """Normalize source name by removing spaces and special characters."""
+    return "".join(name.split())
+
+
 MOCK_ARTICLES = [
     {
         "title": "Climate Change: A Global Challenge",
@@ -94,67 +100,54 @@ def get_mock_articles(
     print(f"Sources filter: {sources}")
     print(f"Search type: {'URL' if is_url_search else 'Body'}")
 
-    def is_whole_word_match(term: str, text: str) -> bool:
-        """Check if term appears as a whole word in text."""
-        import re
-
-        pattern = r"\b" + re.escape(term.lower()) + r"\b"
-        return bool(re.search(pattern, text.lower()))
+    # Normalize source names for comparison
+    normalized_sources = (
+        [normalize_source_name(s) for s in sources] if sources else None
+    )
 
     for article_data in MOCK_ARTICLES:
-        # Filter by date
+        # Skip if article is too old
         if article_data["publishing_date"] < cutoff_date:
             print(f"Skipping article '{article_data['title']}' - too old")
             continue
 
-        # Filter by source if specified
-        if sources and article_data["source"] not in sources:
-            print(
-                f"Skipping article '{article_data['title']}' - source {article_data['source']} not in {sources}"
-            )
-            continue
-
-        # For URL search, only look at the URL
-        if is_url_search:
-            search_text = article_data["url"]
-        else:
-            search_text = f"{article_data['title']} {article_data['body']}"
-
-        # Check include terms (any term must match)
-        matched_terms = [
-            term for term in include_terms if is_whole_word_match(term, search_text)
-        ]
-        if not matched_terms:
-            print(
-                f"Skipping article '{article_data['title']}' - no matching terms in {'URL' if is_url_search else 'content'}"
-            )
-            continue
-        else:
-            print(
-                f"Article '{article_data['title']}' matched terms in {'URL' if is_url_search else 'content'}: {matched_terms}"
-            )
-
-        # Check exclude terms if specified
-        if exclude_terms:
-            excluded_terms = [
-                term for term in exclude_terms if is_whole_word_match(term, search_text)
-            ]
-            if excluded_terms:
+        # Check source filter
+        if sources:
+            article_source = normalize_source_name(article_data["source"])
+            if article_source not in normalized_sources:
                 print(
-                    f"Skipping article '{article_data['title']}' - matched exclude terms in {'URL' if is_url_search else 'content'}: {excluded_terms}"
+                    f"Skipping article '{article_data['title']}' - source {article_data['source']} not in {sources}"
                 )
                 continue
 
-        filtered_articles.append(MockArticle(article_data))
+        # Create article instance
+        article = MockArticle(article_data)
 
-    # Apply max_articles limit if specified
-    if max_articles is not None:
-        filtered_articles = filtered_articles[:max_articles]
-        if len(filtered_articles) > max_articles:
-            print(f"Limiting to {max_articles} articles")
+        # For URL search, check terms in URL
+        if is_url_search:
+            url_text = article.url.lower()
 
-    print(f"\nMock data found {len(filtered_articles)} matching article(s)")
-    for article in filtered_articles:
-        # Print in format "- Title: url, date"
-        print(f"- {article.title}: {article.url}, {article.publishing_date}")
+            # Check include terms
+            if not any(term.lower() in url_text for term in include_terms):
+                continue
+
+            # Check exclude terms
+            if exclude_terms and any(
+                term.lower() in url_text for term in exclude_terms
+            ):
+                continue
+        else:
+            # For body search, check terms in title and body
+            text = (article.title + " " + article.body).lower()
+
+            # Check include terms
+            if not any(term.lower() in text for term in include_terms):
+                continue
+
+        filtered_articles.append(article)
+        print(f"Found matching article: {article.title}")
+
+        if max_articles and len(filtered_articles) >= max_articles:
+            break
+
     return filtered_articles

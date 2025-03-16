@@ -6,6 +6,11 @@ from crawlers.helpers import print_exclude_not_implemented
 from typing import Optional, List
 
 
+def normalize_source_name(name: str) -> str:
+    """Normalize source name by removing spaces and special characters."""
+    return "".join(name.split())
+
+
 def get_sources(source_names: Optional[List[str]] = None):
     if not source_names:
         return (
@@ -15,37 +20,53 @@ def get_sources(source_names: Optional[List[str]] = None):
             PublisherCollection.ca,
         )
 
-    # Get all sources but filter out Python's built-in attributes
-    valid_sources = {
-        name: source
+    # Create a mapping of normalized names to actual source objects
+    source_mapping = {}
+    for collection in [
+        PublisherCollection.us,
+        PublisherCollection.uk,
+        PublisherCollection.au,
+        PublisherCollection.ca,
+    ]:
+        for name, source in vars(collection).items():
+            if not name.startswith("__"):
+                source_mapping[normalize_source_name(name)] = (name, source)
+
+    sources = []
+    invalid_sources = []
+    for name in source_names:
+        normalized_name = normalize_source_name(name)
+        if normalized_name in source_mapping:
+            original_name, source = source_mapping[normalized_name]
+            sources.append(source)
+            print(f"Found {name} (matched as {original_name})")
+        else:
+            invalid_sources.append(name)
+
+    if invalid_sources:
+        # Get list of valid sources with their display names
+        valid_sources = {}
         for collection in [
             PublisherCollection.us,
             PublisherCollection.uk,
             PublisherCollection.au,
             PublisherCollection.ca,
-        ]
-        for name, source in vars(collection).items()
-        if not name.startswith("__")
-    }
+        ]:
+            for name, source in vars(collection).items():
+                if not name.startswith("__"):
+                    display_name = " ".join(
+                        word for word in name if word.isupper() or word == name[0]
+                    )
+                    valid_sources[name] = display_name
 
-    invalid_sources = [name for name in source_names if name not in valid_sources]
-    if invalid_sources:
-        available_sources = sorted(valid_sources.keys())
+        valid_source_display = [
+            f"{display} ({name})" for name, display in valid_sources.items()
+        ]
         raise ValueError(
-            f"Invalid source(s): {', '.join(invalid_sources)}\n"
-            f"Available sources are: {', '.join(available_sources)}"
+            f"Invalid source(s): {', '.join(invalid_sources)}.\n"
+            f"Valid sources are: {', '.join(sorted(valid_source_display))}"
         )
 
-    sources = []
-    for name in source_names:
-        if hasattr(PublisherCollection.us, name):
-            sources.append(getattr(PublisherCollection.us, name))
-        elif hasattr(PublisherCollection.uk, name):
-            sources.append(getattr(PublisherCollection.uk, name))
-        elif hasattr(PublisherCollection.au, name):
-            sources.append(getattr(PublisherCollection.au, name))
-        elif hasattr(PublisherCollection.ca, name):
-            sources.append(getattr(PublisherCollection.ca, name))
     return tuple(sources)
 
 

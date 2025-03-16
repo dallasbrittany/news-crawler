@@ -56,17 +56,48 @@ class CrawlerParams(BaseModel):
     def validate_sources(cls, v):
         if not v:
             return None
-        valid_sources = {
-            **vars(PublisherCollection.us),
-            **vars(PublisherCollection.uk),
-            **vars(PublisherCollection.au),
-            **vars(PublisherCollection.ca),
-        }
+
+        # Create a mapping of normalized names to actual source names
+        source_mapping = {}
+        for collection in [
+            PublisherCollection.us,
+            PublisherCollection.uk,
+            PublisherCollection.au,
+            PublisherCollection.ca,
+        ]:
+            for name, source in vars(collection).items():
+                if not name.startswith("__"):
+                    source_mapping[normalize_source_name(name)] = name
+
+        invalid_sources = []
         for source in v:
-            if source not in valid_sources:
-                raise ValueError(
-                    f"Invalid source: {source}. Valid sources are: {', '.join(valid_sources.keys())}"
-                )
+            normalized_name = normalize_source_name(source)
+            if normalized_name not in source_mapping:
+                invalid_sources.append(source)
+
+        if invalid_sources:
+            # Get list of valid sources with their display names
+            valid_sources = {}
+            for collection in [
+                PublisherCollection.us,
+                PublisherCollection.uk,
+                PublisherCollection.au,
+                PublisherCollection.ca,
+            ]:
+                for name, source in vars(collection).items():
+                    if not name.startswith("__"):
+                        display_name = " ".join(
+                            word for word in name if word.isupper() or word == name[0]
+                        )
+                        valid_sources[name] = display_name
+
+            valid_source_display = [
+                f"{display} ({name})" for name, display in valid_sources.items()
+            ]
+            raise ValueError(
+                f"Invalid source(s): {', '.join(invalid_sources)}. "
+                f"Valid sources are: {', '.join(sorted(valid_source_display))}"
+            )
         return v
 
 
@@ -110,6 +141,11 @@ def article_to_dict(article: Article) -> Dict[str, Any]:
         )
 
 
+def normalize_source_name(name: str) -> str:
+    """Normalize source name by removing spaces and special characters."""
+    return "".join(name.split())
+
+
 def get_sources(source_names: Optional[List[str]] = None):
     if not source_names:
         sources = [
@@ -124,32 +160,41 @@ def get_sources(source_names: Optional[List[str]] = None):
     print(f"Requested sources: {source_names}")
     sources = []
     invalid_sources = []
+
+    # Create a mapping of normalized names to actual source names
+    source_mapping = {}
+    for collection in PUBLISHER_COLLECTIONS.values():
+        for name, source in vars(collection).items():
+            if not name.startswith("__"):
+                source_mapping[normalize_source_name(name)] = (name, source)
+
     for name in source_names:
-        found = False
-        for collection in PUBLISHER_COLLECTIONS.values():
-            if hasattr(collection, name):
-                sources.append(getattr(collection, name))
-                print(f"Found {name} in {collection.__class__.__name__}")
-                found = True
-                break
-        if not found:
+        normalized_name = normalize_source_name(name)
+        if normalized_name in source_mapping:
+            original_name, source = source_mapping[normalized_name]
+            sources.append(source)
+            print(f"Found {name} (matched as {original_name})")
+        else:
             invalid_sources.append(name)
             print(f"Source not found: {name}")
 
     if invalid_sources:
+        # Get list of valid sources with their display names
         valid_sources = {}
         for collection in PUBLISHER_COLLECTIONS.values():
-            valid_sources.update(
-                {
-                    name: source
-                    for name, source in vars(collection).items()
-                    if not name.startswith("__")
-                }
-            )
-        valid_source_names = sorted(valid_sources.keys())
+            for name, source in vars(collection).items():
+                if not name.startswith("__"):
+                    display_name = " ".join(
+                        word for word in name if word.isupper() or word == name[0]
+                    )
+                    valid_sources[name] = display_name
+
+        valid_source_display = [
+            f"{display} ({name})" for name, display in valid_sources.items()
+        ]
         raise ValueError(
             f"Invalid source(s): {', '.join(invalid_sources)}. "
-            f"Valid sources are: {', '.join(valid_source_names)}"
+            f"Valid sources are: {', '.join(sorted(valid_source_display))}"
         )
 
     if not sources:
