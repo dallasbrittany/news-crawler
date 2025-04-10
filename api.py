@@ -136,9 +136,25 @@ def article_to_dict(article: Article) -> Dict[str, Any]:
         if hasattr(article, 'source'):  # For MockArticle
             source = article.source
         elif hasattr(article, 'html') and hasattr(article.html, 'requested_url'):
-            # For fundus Article, extract source from URL
-            url = article.html.requested_url
-            source = url.split('/')[2].replace('www.', '')  # Extract domain name
+            # For fundus Article, try to get the publisher name
+            if hasattr(article, 'publisher') and hasattr(article.publisher, 'name'):
+                source = article.publisher.name
+            else:
+                # Fallback to URL-based source name
+                url = article.html.requested_url
+                domain = url.split('/')[2].replace('www.', '')
+                # Map common domains to their proper names
+                source_map = {
+                    'theguardian.com': 'The Guardian',
+                    'newyorker.com': 'The New Yorker',
+                    'wired.com': 'Wired',
+                    'theatlantic.com': 'The Atlantic',
+                    'nytimes.com': 'The New York Times',
+                    'washingtonpost.com': 'The Washington Post',
+                    'bbc.com': 'BBC',
+                    'reuters.com': 'Reuters',
+                }
+                source = source_map.get(domain, domain)
         else:
             source = "Unknown"
 
