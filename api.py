@@ -287,8 +287,7 @@ async def handle_crawler_request(
                 params.days_back,
                 include,
                 exclude,
-                is_url_search=crawler_class.__name__
-                == "UrlFilterCrawler",  # Set based on crawler type
+                is_url_search=crawler_class.__name__ == "UrlFilterCrawler",  # Set based on crawler type
             )
         else:
             sources = get_sources(sources_list)
@@ -300,7 +299,7 @@ async def handle_crawler_request(
                 exclude if crawler_class.__name__ == "UrlFilterCrawler" else None,
             )
 
-        articles = await run_in_threadpool(crawler.run_crawler, display_output=True)
+        articles = await run_in_threadpool(crawler.run_crawler, display_output=True, show_body=False)
         print(f"Crawler returned {len(articles)} articles")
 
         # Process articles
