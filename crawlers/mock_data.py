@@ -28,7 +28,19 @@ MOCK_ARTICLES = [
     {
         "title": "Advances in AI Technology",
         "url": "https://example.com/ai-advances",
-        "body": "Artificial intelligence continues to evolve with new breakthroughs in machine learning and neural networks. Researchers develop more efficient algorithms.",
+        "body": """Artificial intelligence continues to evolve with new breakthroughs in machine learning and neural networks. Researchers develop more efficient algorithms that are transforming industries across the globe.
+
+In the field of natural language processing, large language models have achieved unprecedented capabilities in understanding and generating human-like text. These models are now being used in customer service, content creation, and even scientific research. The latest models can process and analyze vast amounts of data, identifying patterns that were previously impossible to detect.
+
+Computer vision has also seen remarkable progress, with AI systems now able to identify objects, people, and even emotions with near-human accuracy. This technology is being applied in autonomous vehicles, medical imaging, and security systems. The integration of AI with edge computing has enabled real-time processing of visual data, opening up new possibilities for smart cities and industrial automation.
+
+In healthcare, AI is revolutionizing diagnostics and treatment planning. Machine learning algorithms can analyze medical images to detect diseases earlier and with greater accuracy than traditional methods. AI-powered systems are also helping to predict patient outcomes and optimize treatment plans, leading to more personalized and effective healthcare.
+
+The development of quantum computing is expected to further accelerate AI capabilities. Quantum algorithms could potentially solve complex optimization problems that are currently intractable for classical computers. This could lead to breakthroughs in drug discovery, materials science, and climate modeling.
+
+However, these advances also raise important ethical considerations. The increasing power of AI systems necessitates careful consideration of privacy, bias, and accountability. Researchers and policymakers are working to establish frameworks that ensure AI development proceeds in a responsible and beneficial manner.
+
+The future of AI looks promising, with ongoing research in areas like explainable AI, which aims to make AI decision-making processes more transparent and understandable. As these technologies continue to evolve, they will likely transform our society in ways we are only beginning to imagine.""",
         "source": "Wired",
         "publishing_date": datetime.now() - timedelta(days=3),
         "authors": ["Michael Rodriguez", "David Kim", "Lisa Patel"],
@@ -44,7 +56,21 @@ MOCK_ARTICLES = [
     {
         "title": "Sustainable Energy Solutions",
         "url": "https://example.com/sustainable-energy",
-        "body": "Renewable energy adoption continues to grow worldwide. Solar and wind power installations reach record levels as costs decrease.",
+        "body": """Renewable energy adoption continues to grow worldwide. Solar and wind power installations reach record levels as costs decrease, making clean energy more accessible than ever before.
+
+Solar energy has seen particularly dramatic growth, with photovoltaic technology becoming increasingly efficient and affordable. New developments in perovskite solar cells promise even higher efficiency rates, potentially revolutionizing the solar industry. Large-scale solar farms are being constructed in previously untapped regions, while residential solar installations are becoming commonplace in urban areas.
+
+Wind energy is also experiencing significant advancements. Offshore wind farms are being developed in deeper waters, taking advantage of stronger and more consistent winds. New turbine designs are increasing energy output while reducing environmental impact. Floating wind turbines are opening up new possibilities for energy generation in deep ocean waters.
+
+Energy storage solutions are critical to the success of renewable energy. Breakthroughs in battery technology, including solid-state batteries and flow batteries, are improving energy density and reducing costs. Grid-scale storage systems are being deployed to manage the intermittent nature of renewable energy sources, ensuring reliable power supply even when the sun isn't shining or the wind isn't blowing.
+
+The transition to sustainable energy is also creating new economic opportunities. Green jobs in renewable energy sectors are growing rapidly, from manufacturing and installation to maintenance and research. Countries are investing in workforce development programs to train workers for careers in the clean energy economy.
+
+Policy initiatives are playing a crucial role in accelerating the adoption of sustainable energy. Governments worldwide are implementing carbon pricing mechanisms, renewable portfolio standards, and tax incentives to encourage investment in clean energy. International agreements are fostering collaboration on research and development of new technologies.
+
+Despite these positive developments, challenges remain. Grid infrastructure needs to be modernized to accommodate distributed energy resources. Energy equity must be addressed to ensure that the benefits of clean energy reach all communities. And the transition must be managed carefully to support workers and communities affected by the shift away from fossil fuels.
+
+The future of sustainable energy looks promising, with continued innovation driving down costs and improving efficiency. As technology advances and economies of scale are achieved, renewable energy is expected to become the dominant source of power worldwide, helping to mitigate climate change while powering economic growth.""",
         "source": "The New Yorker",
         "publishing_date": datetime.now() - timedelta(days=5),
         "authors": ["Alex Green", "Maria Santos"],
