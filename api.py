@@ -130,7 +130,17 @@ def article_to_dict(article: Article) -> Dict[str, Any]:
             pub_date = article.publishing_date
 
         # Convert body to string if it's not already
-        body = str(article.body) if hasattr(article, "body") else ""
+        body = str(article.body) if hasattr(article, 'body') else ""
+
+        # Handle source name based on article type
+        if hasattr(article, 'source'):  # For MockArticle
+            source = article.source
+        elif hasattr(article, 'html') and hasattr(article.html, 'requested_url'):
+            # For fundus Article, extract source from URL
+            url = article.html.requested_url
+            source = url.split('/')[2].replace('www.', '')  # Extract domain name
+        else:
+            source = "Unknown"
 
         return {
             "title": article.title,
@@ -140,7 +150,7 @@ def article_to_dict(article: Article) -> Dict[str, Any]:
             "publishing_date": pub_date,
             "body": body,
             "authors": getattr(article, "authors", []),
-            "source": article.source if hasattr(article, "source") else "",
+            "source": source,
         }
     except AttributeError as e:
         print(f"Error processing article: {str(e)}")
