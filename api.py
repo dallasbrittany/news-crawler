@@ -205,9 +205,8 @@ def get_sources(source_names: Optional[List[str]] = None):
     for name in source_names:
         normalized_name = normalize_source_name(name)
         if normalized_name in source_mapping:
-            original_name, source = source_mapping[normalized_name]
+            _, source = source_mapping[normalized_name]
             sources.append(source)
-            print(f"Found {name} (matched as {original_name})")
         else:
             invalid_sources.append(name)
             print(f"Source not found: {name}")

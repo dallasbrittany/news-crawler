@@ -127,9 +127,7 @@ def get_mock_articles(
     filtered_articles = []
     cutoff_date = datetime.now() - timedelta(days=days_back)
 
-    print(f"\nMock data searching with terms: {include_terms}")
-    print(f"Sources filter: {sources}")
-    print(f"Search type: {'URL' if is_url_search else 'Body'}")
+    print(f"Mock search type: {'URL' if is_url_search else 'Body'}")
 
     # Normalize source names for comparison
     normalized_sources = (
