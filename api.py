@@ -121,29 +121,29 @@ def article_to_dict(article: Article) -> Dict[str, Any]:
             pub_date = article.publishing_date
 
         # Convert body to string if it's not already
-        body = str(article.body) if hasattr(article, 'body') else ""
+        body = str(article.body) if hasattr(article, "body") else ""
 
         # Handle source name based on article type
-        if hasattr(article, 'source'):  # For MockArticle
+        if hasattr(article, "source"):  # For MockArticle
             source = article.source
-        elif hasattr(article, 'html') and hasattr(article.html, 'requested_url'):
+        elif hasattr(article, "html") and hasattr(article.html, "requested_url"):
             # For fundus Article, try to get the publisher name
-            if hasattr(article, 'publisher') and hasattr(article.publisher, 'name'):
+            if hasattr(article, "publisher") and hasattr(article.publisher, "name"):
                 source = article.publisher.name
             else:
                 # Fallback to URL-based source name
                 url = article.html.requested_url
-                domain = url.split('/')[2].replace('www.', '')
+                domain = url.split("/")[2].replace("www.", "")
                 # Map common domains to their proper names
                 source_map = {
-                    'theguardian.com': 'The Guardian',
-                    'newyorker.com': 'The New Yorker',
-                    'wired.com': 'Wired',
-                    'theatlantic.com': 'The Atlantic',
-                    'nytimes.com': 'The New York Times',
-                    'washingtonpost.com': 'The Washington Post',
-                    'bbc.com': 'BBC',
-                    'reuters.com': 'Reuters',
+                    "theguardian.com": "The Guardian",
+                    "newyorker.com": "The New Yorker",
+                    "wired.com": "Wired",
+                    "theatlantic.com": "The Atlantic",
+                    "nytimes.com": "The New York Times",
+                    "washingtonpost.com": "The Washington Post",
+                    "bbc.com": "BBC",
+                    "reuters.com": "Reuters",
                 }
                 source = source_map.get(domain, domain)
         else:
@@ -271,7 +271,8 @@ async def handle_crawler_request(
                 params.days_back,
                 include,
                 exclude,
-                is_url_search=crawler_class.__name__ == "UrlFilterCrawler",  # Set based on crawler type
+                is_url_search=crawler_class.__name__
+                == "UrlFilterCrawler",  # Set based on crawler type
             )
         else:
             sources = get_sources(sources_list)
@@ -293,7 +294,9 @@ async def handle_crawler_request(
                     timeout_seconds,
                 )
 
-        articles = await run_in_threadpool(crawler.run_crawler, display_output=True, show_body=False)
+        articles = await run_in_threadpool(
+            crawler.run_crawler, display_output=True, show_body=False
+        )
         print(f"Crawler returned {len(articles)} articles")
 
         # Process articles

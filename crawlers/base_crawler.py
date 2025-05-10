@@ -69,7 +69,10 @@ def format_sources(sources_list):
             normalized_source_name = normalize_source_name(source_name)
             for region, collection in PUBLISHER_COLLECTIONS.items():
                 for name, publisher in vars(collection).items():
-                    if not name.startswith("__") and normalize_source_name(name) == normalized_source_name:
+                    if (
+                        not name.startswith("__")
+                        and normalize_source_name(name) == normalized_source_name
+                    ):
                         sources_by_region[region].append(source_name)
                         found = True
                         break
@@ -162,7 +165,9 @@ class BaseCrawler(ABC):
         timer = None
         timeout_event = threading.Event()
         if self.timeout_seconds:
-            timer = threading.Timer(self.timeout_seconds, timeout_handler, args=(timeout_event,))
+            timer = threading.Timer(
+                self.timeout_seconds, timeout_handler, args=(timeout_event,)
+            )
             timer.start()
             print(f"Set crawler timeout for {self.timeout_seconds} seconds")
 
