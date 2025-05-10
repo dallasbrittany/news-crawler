@@ -377,4 +377,5 @@ async def crawl_url(
 async def set_mock_state(state: bool):
     """Toggle mock mode on/off."""
     app.state.use_mock = state
+    print(f"\nMock mode {'enabled' if state else 'disabled'}.")
     return {"message": f"Mock mode set to: {state}"}
