@@ -8,23 +8,20 @@ Uses `fundus` for news crawling and includes both a CLI mode and an API mode. Th
 
 If you use this tool, please use it responsibly. Data isn't free, and neither is journalism.
 
-## Immediate Issues
-- Testing with the UI needs to be done more
-
-### Could Use Improvements
-- Seems repetitive the way it's doing `if t.strip()` so much; also remove other repetitive things
-- Why'd it get rid of the doc string for `handle_crawler_request`?
-
-### To Verify
-- Source name normalization approach
-- Should `ArticleResponse` authors be optional?
-- How does `run_in_threadpool` work?
-- `is_whole_word_match`
-
 ## Usage
 - Install with `pipenv` with the Python version specified in `.python-version` -- see bottom of this file for some `pipenv` tips.
 - The crawler can be run in two modes: CLI or API. The CLI mode is mainly for quickly experimenting and watching headlines scroll by. The API mode has been added so a UI can be built to connect to it for easier viewing of the articles.
 - Right now, there are two types of searches -- body text and URL text. Searching body text allows for searching with multiple keywords using OR. Searching URL text allows for searching for multiple keywords using AND but also allows ensuring there are excluded keywords, as well. There is date filtering available, but it's better supported for the body text search.
+
+When the crawler initializes, it displays the sources grouped by region with counts. For example:
+```
+Initialized crawler with sources:
+US (18): The New York Times, The Washington Post, ...
+UK (12): The Guardian, BBC, ...
+AU (8): The Sydney Morning Herald, ...
+CA (6): The Globe and Mail, ...
+```
+The numbers in parentheses indicate how many sources are being used from each region. If a source isn't recognized, it will be listed under "Unknown" sources.
 
 ### Code Organization
 

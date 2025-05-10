@@ -255,8 +255,7 @@ def expand_terms(terms: List[str]) -> List[str]:
         if "," in term:
             expanded.extend(t.strip() for t in term.split(",") if t.strip())
         else:
-            if term.strip():
-                expanded.append(term.strip())
+            expanded.append(term.strip())
     return expanded
 
 
