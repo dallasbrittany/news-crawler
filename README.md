@@ -9,7 +9,7 @@ Uses `fundus` for news crawling and includes both a CLI mode and an API mode. Th
 If you use this tool, please use it responsibly. Data isn't free, and neither is journalism.
 
 ## Immediate Issues
-- The timeout may not be working right with the API.
+- The timeout option isn't working right, probably because of the weird thing Cursor decided to do with threads
 
 ## Usage
 - Install with `pipenv` with the Python version specified in `.python-version` -- see bottom of this file for some `pipenv` tips.
