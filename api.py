@@ -256,6 +256,7 @@ async def handle_crawler_request(
     exclude: Optional[List[str]],
     sources: Optional[str],
     crawler_class,
+    timeout_seconds: Optional[int] = None,
 ) -> CrawlerResponse:
     try:
         # Parse and validate sources
@@ -274,13 +275,23 @@ async def handle_crawler_request(
             )
         else:
             sources = get_sources(sources_list)
-            crawler = crawler_class(
-                sources,
-                params.max_articles,
-                params.days_back,
-                include,
-                exclude if crawler_class.__name__ == "UrlFilterCrawler" else None,
-            )
+            if crawler_class.__name__ == "UrlFilterCrawler":
+                crawler = crawler_class(
+                    sources,
+                    params.max_articles,
+                    params.days_back,
+                    include,
+                    exclude,
+                    timeout_seconds,
+                )
+            else:  # BodyFilterCrawler
+                crawler = crawler_class(
+                    sources,
+                    params.max_articles,
+                    params.days_back,
+                    include,
+                    timeout_seconds,
+                )
 
         articles = await run_in_threadpool(crawler.run_crawler, display_output=True, show_body=False)
         print(f"Crawler returned {len(articles)} articles")
@@ -331,6 +342,7 @@ async def crawl_body(
         None,  # exclude parameter is not used for body search
         sources,
         BodyFilterCrawler,
+        params.timeout,
     )
 
 
@@ -360,6 +372,7 @@ async def crawl_url(
         expanded_exclude,
         sources,
         UrlFilterCrawler,
+        params.timeout,
     )
 
 

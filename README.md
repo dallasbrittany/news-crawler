@@ -8,9 +8,6 @@ Uses `fundus` for news crawling and includes both a CLI mode and an API mode. Th
 
 If you use this tool, please use it responsibly. Data isn't free, and neither is journalism.
 
-## Immediate Issues
-- The timeout option isn't working right, probably because of the weird thing Cursor decided to do with threads
-
 ## Usage
 - Install with `pipenv` with the Python version specified in `.python-version` -- see bottom of this file for some `pipenv` tips.
 - The crawler can be run in two modes: CLI or API. The CLI mode is mainly for quickly experimenting and watching headlines scroll by. The API mode has been added so a UI can be built to connect to it for easier viewing of the articles.

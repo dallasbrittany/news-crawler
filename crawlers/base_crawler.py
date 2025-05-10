@@ -2,15 +2,15 @@ from typing import Dict, Any, List, Optional
 from abc import ABC, abstractmethod
 import datetime
 import time
-import signal
+import threading
 import requests
 from fundus import Crawler, PublisherCollection, Sitemap, Article
 from crawlers.helpers import display, print_divider
 from crawlers.mock_data import normalize_source_name
 
 
-def timeout_handler(signum, frame):
-    raise TimeoutError("Crawler operation timed out")
+def timeout_handler(timeout_event):
+    timeout_event.set()
 
 
 class CrawlerError(Exception):
@@ -25,7 +25,7 @@ class NetworkError(CrawlerError):
     pass
 
 
-class TimeoutError(CrawlerError):
+class TimeoutError(Exception):
     """Raised when crawler exceeds specified timeout"""
 
     pass
@@ -159,9 +159,11 @@ class BaseCrawler(ABC):
         max_retries = 3
 
         # Set up the timeout handler
+        timer = None
+        timeout_event = threading.Event()
         if self.timeout_seconds:
-            signal.signal(signal.SIGALRM, timeout_handler)
-            signal.alarm(self.timeout_seconds)
+            timer = threading.Timer(self.timeout_seconds, timeout_handler, args=(timeout_event,))
+            timer.start()
             print(f"Set crawler timeout for {self.timeout_seconds} seconds")
 
         try:
@@ -170,10 +172,22 @@ class BaseCrawler(ABC):
             )
 
             while True:
+                # Check for timeout
+                if timeout_event.is_set():
+                    raise TimeoutError("Crawler operation timed out")
+
                 try:
+                    # Check for timeout again before fetching next article
+                    if timeout_event.is_set():
+                        raise TimeoutError("Crawler operation timed out")
+
                     article = next(article_iterator, None)
                     if article is None:  # No more articles
                         break
+
+                    # Check for timeout after fetching article
+                    if timeout_event.is_set():
+                        raise TimeoutError("Crawler operation timed out")
 
                     # Check if we have a valid publishing date
                     if (
@@ -261,8 +275,8 @@ class BaseCrawler(ABC):
             raise CrawlerError(f"Crawler error: {str(e)}")
 
         finally:
-            if self.timeout_seconds:
-                signal.alarm(0)  # Disable the alarm
+            if timer:
+                timer.cancel()  # Cancel the timer if it's still running
 
         if display_output:
             print(f"\nCrawling completed. Found {len(articles)} article(s).")
