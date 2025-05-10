@@ -4,6 +4,19 @@ from fundus import PublisherCollection
 from crawlers import BodyFilterCrawler, UrlFilterCrawler
 from crawlers.helpers import print_exclude_not_implemented
 from typing import Optional, List
+from crawlers.base_crawler import (
+    CrawlerError,
+    NetworkError,
+    TimeoutError,
+    PUBLISHER_COLLECTIONS,
+    PUBLISHER_COLLECTIONS_LIST,
+    CLICrawler,
+)
+
+
+def normalize_source_name(name: str) -> str:
+    """Normalize source name by removing spaces and special characters."""
+    return "".join(name.split())
 
 
 def get_sources(source_names: Optional[List[str]] = None):
@@ -15,37 +28,43 @@ def get_sources(source_names: Optional[List[str]] = None):
             PublisherCollection.ca,
         )
 
-    # Get all sources but filter out Python's built-in attributes
-    valid_sources = {
-        name: source
-        for collection in [
-            PublisherCollection.us,
-            PublisherCollection.uk,
-            PublisherCollection.au,
-            PublisherCollection.ca,
-        ]
-        for name, source in vars(collection).items()
-        if not name.startswith("__")
-    }
-
-    invalid_sources = [name for name in source_names if name not in valid_sources]
-    if invalid_sources:
-        available_sources = sorted(valid_sources.keys())
-        raise ValueError(
-            f"Invalid source(s): {', '.join(invalid_sources)}\n"
-            f"Available sources are: {', '.join(available_sources)}"
-        )
+    # Create a mapping of normalized names to actual source objects
+    source_mapping = {}
+    for collection in PUBLISHER_COLLECTIONS_LIST:
+        for name, source in vars(collection).items():
+            if not name.startswith("__"):
+                source_mapping[normalize_source_name(name)] = (name, source)
 
     sources = []
+    invalid_sources = []
     for name in source_names:
-        if hasattr(PublisherCollection.us, name):
-            sources.append(getattr(PublisherCollection.us, name))
-        elif hasattr(PublisherCollection.uk, name):
-            sources.append(getattr(PublisherCollection.uk, name))
-        elif hasattr(PublisherCollection.au, name):
-            sources.append(getattr(PublisherCollection.au, name))
-        elif hasattr(PublisherCollection.ca, name):
-            sources.append(getattr(PublisherCollection.ca, name))
+        normalized_name = normalize_source_name(name)
+        if normalized_name in source_mapping:
+            original_name, source = source_mapping[normalized_name]
+            sources.append(source)
+            print(f"Found {name} (matched as {original_name})")
+        else:
+            invalid_sources.append(name)
+
+    if invalid_sources:
+        # Get list of valid sources with their display names
+        valid_sources = {}
+        for collection in PUBLISHER_COLLECTIONS_LIST:
+            for name, source in vars(collection).items():
+                if not name.startswith("__"):
+                    display_name = " ".join(
+                        word for word in name if word.isupper() or word == name[0]
+                    )
+                    valid_sources[name] = display_name
+
+        valid_source_display = [
+            f"{display} ({name})" for name, display in valid_sources.items()
+        ]
+        raise ValueError(
+            f"Invalid source(s): {', '.join(invalid_sources)}.\n"
+            f"Valid sources are: {', '.join(sorted(valid_source_display))}"
+        )
+
     return tuple(sources)
 
 
@@ -57,6 +76,7 @@ def main(
     keywords_exclude: list,
     timeout: Optional[int] = None,
     sources: Optional[List[str]] = None,
+    use_mock: bool = False,
 ):
     max_str = (
         f" with max articles set to {max_articles}"
@@ -69,8 +89,9 @@ def main(
         if sources
         else " from all US, UK, Australian, and Canadian sources"
     )
+    mock_str = " (using mock data)" if use_mock else ""
     print(
-        f"Using {crawler} crawler for search{sources_str}{max_str} and going {days_back} day(s) back{timeout_str}.\n"
+        f"Using {crawler} crawler for search{sources_str}{max_str} and going {days_back} day(s) back{timeout_str}{mock_str}.\n"
     )
 
     crawler_sources = get_sources(sources)
@@ -82,26 +103,59 @@ def main(
         if keywords_exclude:
             print_exclude_not_implemented()
 
-        crawler = BodyFilterCrawler(
-            crawler_sources,
-            max_articles,
-            days_back,
-            keywords_include,
-            timeout_seconds=timeout,
-        )
+        if use_mock:
+            from crawlers.mock_crawler import MockCrawler
+
+            crawler = MockCrawler(
+                crawler_sources,
+                max_articles,
+                days_back,
+                keywords_include,
+                timeout_seconds=timeout,
+                is_url_search=False,  # Body search
+            )
+        else:
+
+            class CLIBodyFilterCrawler(CLICrawler, BodyFilterCrawler):
+                pass
+
+            crawler = CLIBodyFilterCrawler(
+                crawler_sources,
+                max_articles,
+                days_back,
+                keywords_include,
+                timeout_seconds=timeout,
+            )
         crawler.run_crawler()
     elif crawler == "url":
         if not keywords_include:
             raise ValueError("keywords_include is required for URL search")
 
-        url_filter_crawler = UrlFilterCrawler(
-            crawler_sources,
-            max_articles,
-            days_back,
-            keywords_include,
-            keywords_exclude or [],
-            timeout_seconds=timeout,
-        )
+        if use_mock:
+            from crawlers.mock_crawler import MockCrawler
+
+            url_filter_crawler = MockCrawler(
+                crawler_sources,
+                max_articles,
+                days_back,
+                keywords_include,
+                keywords_exclude or [],
+                timeout_seconds=timeout,
+                is_url_search=True,  # URL search
+            )
+        else:
+
+            class CLIUrlFilterCrawler(CLICrawler, UrlFilterCrawler):
+                pass
+
+            url_filter_crawler = CLIUrlFilterCrawler(
+                crawler_sources,
+                max_articles,
+                days_back,
+                keywords_include,
+                keywords_exclude or [],
+                timeout_seconds=timeout,
+            )
         url_filter_crawler.run_crawler()
     else:
         raise ValueError(f"Unknown crawler type: {crawler}")
@@ -135,7 +189,7 @@ if __name__ == "__main__":
         "--include", nargs="+", help="List of keywords to include in the search"
     )
     parser.add_argument(
-        "--exclude", nargs="+", help="List of keywords to exclude from the search"
+        "--exclude", nargs="+", help="List of keywords to exclude from URL search"
     )
     parser.add_argument(
         "--timeout",
@@ -159,6 +213,11 @@ if __name__ == "__main__":
         nargs="+",
         help="List of news sources to crawl (e.g., TheNewYorker, TheGuardian). If not specified, uses all US and UK sources",
     )
+    parser.add_argument(
+        "--mock",
+        action="store_true",
+        help="Use mock data instead of real crawling (for testing)",
+    )
 
     args = parser.parse_args()
 
@@ -173,10 +232,14 @@ if __name__ == "__main__":
             args.exclude,
             args.timeout,
             args.sources,
+            args.mock,
         )
     else:  # api mode
         from api import app
 
         print(f"Starting API server on {args.host}:{args.port}")
         print("API documentation available at http://127.0.0.1:8000/docs")
+        if args.mock:
+            print("Running in mock mode - using test data instead of real crawling")
+            app.state.use_mock = True
         uvicorn.run(app, host=args.host, port=args.port)

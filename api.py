@@ -1,6 +1,8 @@
 from fastapi import FastAPI, Query, HTTPException, Depends
+from fastapi.concurrency import run_in_threadpool
 from typing import List, Optional, Dict, Any
 from pydantic import BaseModel, field_validator, Field
+from datetime import datetime
 from fundus import PublisherCollection, Article
 from crawlers import BodyFilterCrawler, UrlFilterCrawler
 from crawlers.base_crawler import (
@@ -8,6 +10,7 @@ from crawlers.base_crawler import (
     NetworkError,
     TimeoutError,
     PUBLISHER_COLLECTIONS,
+    PUBLISHER_COLLECTIONS_LIST,
 )
 
 app = FastAPI(
@@ -16,18 +19,22 @@ app = FastAPI(
     version="1.0.0",
 )
 
+# Initialize app state
+app.state.use_mock = False
+
 
 class ArticleResponse(BaseModel):
     title: str
     url: str
-    publishing_date: str
+    publishing_date: datetime
     body: str
-    authors: List[str]
+    authors: Optional[List[str]] = []  # Made optional with default empty list
+    source: str
 
 
 class CrawlerResponse(BaseModel):
-    message: str
     articles: List[ArticleResponse]
+    message: str = "Success"
     error: Optional[str] = None
 
 
@@ -54,17 +61,38 @@ class CrawlerParams(BaseModel):
     def validate_sources(cls, v):
         if not v:
             return None
-        valid_sources = {
-            **vars(PublisherCollection.us),
-            **vars(PublisherCollection.uk),
-            **vars(PublisherCollection.au),
-            **vars(PublisherCollection.ca),
-        }
+
+        # Create a mapping of normalized names to actual source names
+        source_mapping = {}
+        for collection in PUBLISHER_COLLECTIONS_LIST:
+            for name, source in vars(collection).items():
+                if not name.startswith("__"):
+                    source_mapping[normalize_source_name(name)] = name
+
+        invalid_sources = []
         for source in v:
-            if source not in valid_sources:
-                raise ValueError(
-                    f"Invalid source: {source}. Valid sources are: {', '.join(valid_sources.keys())}"
-                )
+            normalized_name = normalize_source_name(source)
+            if normalized_name not in source_mapping:
+                invalid_sources.append(source)
+
+        if invalid_sources:
+            # Get list of valid sources with their display names
+            valid_sources = {}
+            for collection in PUBLISHER_COLLECTIONS_LIST:
+                for name, source in vars(collection).items():
+                    if not name.startswith("__"):
+                        display_name = " ".join(
+                            word for word in name if word.isupper() or word == name[0]
+                        )
+                        valid_sources[name] = display_name
+
+            valid_source_display = [
+                f"{display} ({name})" for name, display in valid_sources.items()
+            ]
+            raise ValueError(
+                f"Invalid source(s): {', '.join(invalid_sources)}. "
+                f"Valid sources are: {', '.join(sorted(valid_source_display))}"
+            )
         return v
 
 
@@ -80,18 +108,67 @@ def handle_crawler_error(e: Exception) -> Dict[str, Any]:
 
 
 def article_to_dict(article: Article) -> Dict[str, Any]:
+    """Convert an article to a dictionary format matching ArticleResponse."""
     try:
+        # Ensure publishing_date is a datetime object
+        if isinstance(article.publishing_date, str):
+            # If it's a string, try to parse it as a datetime
+            pub_date = datetime.fromisoformat(
+                article.publishing_date.replace("Z", "+00:00")
+            )
+        else:
+            # If it's already a datetime or similar, use it as is
+            pub_date = article.publishing_date
+
+        # Convert body to string if it's not already
+        body = str(article.body) if hasattr(article, "body") else ""
+
+        # Handle source name based on article type
+        if hasattr(article, "source"):  # For MockArticle
+            source = article.source
+        elif hasattr(article, "html") and hasattr(article.html, "requested_url"):
+            # For fundus Article, try to get the publisher name
+            if hasattr(article, "publisher") and hasattr(article.publisher, "name"):
+                source = article.publisher.name
+            else:
+                # Fallback to URL-based source name
+                url = article.html.requested_url
+                domain = url.split("/")[2].replace("www.", "")
+                # Map common domains to their proper names
+                source_map = {
+                    "theguardian.com": "The Guardian",
+                    "newyorker.com": "The New Yorker",
+                    "wired.com": "Wired",
+                    "theatlantic.com": "The Atlantic",
+                    "nytimes.com": "The New York Times",
+                    "washingtonpost.com": "The Washington Post",
+                    "bbc.com": "BBC",
+                    "reuters.com": "Reuters",
+                }
+                source = source_map.get(domain, domain)
+        else:
+            source = "Unknown"
+
         return {
-            "title": article.title or "",
-            "url": article.html.requested_url,
-            "publishing_date": str(article.publishing_date),
-            "body": str(article.body),
-            "authors": article.authors or [],
+            "title": article.title,
+            "url": (
+                article.url if hasattr(article, "url") else article.html.requested_url
+            ),
+            "publishing_date": pub_date,
+            "body": body,
+            "authors": getattr(article, "authors", []),
+            "source": source,
         }
     except AttributeError as e:
+        print(f"Error processing article: {str(e)}")
         raise HTTPException(
             status_code=422, detail=f"Error processing article data: {str(e)}"
         )
+
+
+def normalize_source_name(name: str) -> str:
+    """Normalize source name by removing spaces and special characters."""
+    return "".join(name.split())
 
 
 def get_sources(source_names: Optional[List[str]] = None):
@@ -108,32 +185,40 @@ def get_sources(source_names: Optional[List[str]] = None):
     print(f"Requested sources: {source_names}")
     sources = []
     invalid_sources = []
+
+    # Create a mapping of normalized names to actual source names
+    source_mapping = {}
+    for collection in PUBLISHER_COLLECTIONS_LIST:
+        for name, source in vars(collection).items():
+            if not name.startswith("__"):
+                source_mapping[normalize_source_name(name)] = (name, source)
+
     for name in source_names:
-        found = False
-        for collection in PUBLISHER_COLLECTIONS.values():
-            if hasattr(collection, name):
-                sources.append(getattr(collection, name))
-                print(f"Found {name} in {collection.__class__.__name__}")
-                found = True
-                break
-        if not found:
+        normalized_name = normalize_source_name(name)
+        if normalized_name in source_mapping:
+            _, source = source_mapping[normalized_name]
+            sources.append(source)
+        else:
             invalid_sources.append(name)
             print(f"Source not found: {name}")
 
     if invalid_sources:
+        # Get list of valid sources with their display names
         valid_sources = {}
-        for collection in PUBLISHER_COLLECTIONS.values():
-            valid_sources.update(
-                {
-                    name: source
-                    for name, source in vars(collection).items()
-                    if not name.startswith("__")
-                }
-            )
-        valid_source_names = sorted(valid_sources.keys())
+        for collection in PUBLISHER_COLLECTIONS_LIST:
+            for name, source in vars(collection).items():
+                if not name.startswith("__"):
+                    display_name = " ".join(
+                        word for word in name if word.isupper() or word == name[0]
+                    )
+                    valid_sources[name] = display_name
+
+        valid_source_display = [
+            f"{display} ({name})" for name, display in valid_sources.items()
+        ]
         raise ValueError(
             f"Invalid source(s): {', '.join(invalid_sources)}. "
-            f"Valid sources are: {', '.join(valid_source_names)}"
+            f"Valid sources are: {', '.join(sorted(valid_source_display))}"
         )
 
     if not sources:
@@ -155,14 +240,7 @@ def parse_sources(
 
 
 def expand_terms(terms: List[str]) -> List[str]:
-    """Split any comma-separated terms into a list of individual terms.
-
-    Args:
-        terms: List of terms that may contain comma-separated values
-
-    Returns:
-        List of individual terms with whitespace stripped
-    """
+    """Split comma-separated terms into individual terms and clean them."""
     expanded = []
     for term in terms:
         if "," in term:
@@ -178,74 +256,62 @@ async def handle_crawler_request(
     exclude: Optional[List[str]],
     sources: Optional[str],
     crawler_class,
+    timeout_seconds: Optional[int] = None,
 ) -> CrawlerResponse:
-    """Handle common crawler request logic for both body and URL endpoints.
-
-    Args:
-        params: Common crawler parameters (max_articles, days_back, timeout, etc.)
-        include: Required keywords to include in search
-        exclude: Optional keywords to exclude from search (only used by UrlFilterCrawler)
-        sources: Comma-separated list of sources to crawl
-        crawler_class: Either BodyFilterCrawler or UrlFilterCrawler
-
-    Returns:
-        CrawlerResponse containing found articles and status message
-
-    Raises:
-        HTTPException: For various error conditions (400, 408, 422, 500, 503)
-    """
     try:
-        print(f"API received timeout parameter: {params.timeout} seconds")
-
         # Parse and validate sources
         sources_list = parse_sources(sources, params.sources)
-        sources = get_sources(sources_list)
 
-        print(f"Creating crawler with timeout: {params.timeout} seconds")
-        if crawler_class == UrlFilterCrawler:
-            # Only pass exclude terms if they are provided and not empty
-            exclude_terms = exclude if exclude and len(exclude) > 0 else []
-            print(f"URL crawler exclude terms: {exclude_terms}")
-            crawler = crawler_class(
-                sources,
+        if app.state.use_mock:
+            from crawlers.mock_crawler import MockCrawler
+
+            crawler = MockCrawler(
+                sources_list,  # Pass the source names directly
                 params.max_articles,
                 params.days_back,
                 include,
-                exclude_terms,
-                timeout_seconds=params.timeout,
+                exclude,
+                is_url_search=crawler_class.__name__
+                == "UrlFilterCrawler",  # Set based on crawler type
             )
-        else:  # BodyFilterCrawler
-            crawler = crawler_class(
-                sources,
-                params.max_articles,
-                params.days_back,
-                include,
-                timeout_seconds=params.timeout,
-            )
+        else:
+            sources = get_sources(sources_list)
+            if crawler_class.__name__ == "UrlFilterCrawler":
+                crawler = crawler_class(
+                    sources,
+                    params.max_articles,
+                    params.days_back,
+                    include,
+                    exclude,
+                    timeout_seconds,
+                )
+            else:  # BodyFilterCrawler
+                crawler = crawler_class(
+                    sources,
+                    params.max_articles,
+                    params.days_back,
+                    include,
+                    timeout_seconds,
+                )
 
-        # Run crawler with appropriate display settings
-        display_output = (
-            crawler_class == BodyFilterCrawler
-        )  # Only show output for body crawler
-        articles = crawler.run_crawler(
-            display_output=display_output,
-            show_body=False,  # Don't show article bodies in API mode
+        articles = await run_in_threadpool(
+            crawler.run_crawler, display_output=True, show_body=False
         )
         print(f"Crawler returned {len(articles)} articles")
 
         # Process articles
         processed_articles = []
-        for i, article in enumerate(articles):
+        for article in articles:
             try:
-                processed_article = article_to_dict(article)
-                processed_articles.append(processed_article)
+                article_dict = article_to_dict(article)
+                processed_articles.append(ArticleResponse(**article_dict))
             except Exception as e:
-                print(f"Error processing article {i}: {type(e).__name__}: {str(e)}")
+                print(f"Error processing article: {type(e).__name__}: {str(e)}")
                 continue
 
         return CrawlerResponse(
-            message=f"{crawler_class.__name__} completed with {len(processed_articles)} article(s) found",
             articles=processed_articles,
+            message=f"Found {len(processed_articles)} article(s)",
         )
 
     except Exception as e:
@@ -279,6 +345,7 @@ async def crawl_body(
         None,  # exclude parameter is not used for body search
         sources,
         BodyFilterCrawler,
+        params.timeout,
     )
 
 
@@ -286,12 +353,10 @@ async def crawl_body(
 async def crawl_url(
     params: CrawlerParams = Depends(),
     include: List[str] = Query(
-        ...,
-        description="Required keywords to include in URL search (comma-separated or multiple parameters)",
+        ..., description="Required keywords to include in search"
     ),
-    exclude: List[str] = Query(
-        [],
-        description="Terms to filter out from URL (comma-separated or multiple parameters)",
+    exclude: Optional[List[str]] = Query(
+        None, description="Optional keywords to exclude from search"
     ),
     sources: Optional[str] = Query(
         None,
@@ -299,10 +364,10 @@ async def crawl_url(
     ),
 ):
     expanded_include = expand_terms(include)
-    expanded_exclude = expand_terms(exclude)
-
+    expanded_exclude = expand_terms(exclude) if exclude else None
     print(f"Include terms: {expanded_include}")
-    print(f"Exclude terms: {expanded_exclude}")
+    if expanded_exclude:
+        print(f"Exclude terms: {expanded_exclude}")
 
     return await handle_crawler_request(
         params,
@@ -310,4 +375,13 @@ async def crawl_url(
         expanded_exclude,
         sources,
         UrlFilterCrawler,
+        params.timeout,
     )
+
+
+@app.get("/mock/{state}")
+async def set_mock_state(state: bool):
+    """Toggle mock mode on/off."""
+    app.state.use_mock = state
+    print(f"\nMock mode {'enabled' if state else 'disabled'}.")
+    return {"message": f"Mock mode set to: {state}"}

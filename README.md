@@ -1,5 +1,9 @@
 # news-crawler
 
+<div style="background-color: #fff; border: 1px solid #ddd; padding: 15px; margin: 20px 0; border-radius: 4px; box-shadow: 0 2px 4px rgba(0,0,0,0.1); transform: rotate(-1deg);">
+  <strong>📝 Note:</strong> This project has been an experiment with using Cursor and included some vibe coding as is evident from this note, which I would have never even thought to rotate before.
+</div>
+
 Uses `fundus` for news crawling and includes both a CLI mode and an API mode. There are no guarantees with this code, and it could change completely any time. It's a bit of an experiment -- both with news crawling and also with using AI in development (Copilot and Cursor primarily).
 
 If you use this tool, please use it responsibly. Data isn't free, and neither is journalism.
@@ -8,6 +12,16 @@ If you use this tool, please use it responsibly. Data isn't free, and neither is
 - Install with `pipenv` with the Python version specified in `.python-version` -- see bottom of this file for some `pipenv` tips.
 - The crawler can be run in two modes: CLI or API. The CLI mode is mainly for quickly experimenting and watching headlines scroll by. The API mode has been added so a UI can be built to connect to it for easier viewing of the articles.
 - Right now, there are two types of searches -- body text and URL text. Searching body text allows for searching with multiple keywords using OR. Searching URL text allows for searching for multiple keywords using AND but also allows ensuring there are excluded keywords, as well. There is date filtering available, but it's better supported for the body text search.
+
+When the crawler initializes, it displays the sources grouped by region with counts. For example:
+```
+Initialized crawler with sources:
+US (18): The New York Times, The Washington Post, ...
+UK (12): The Guardian, BBC, ...
+AU (8): The Sydney Morning Herald, ...
+CA (6): The Globe and Mail, ...
+```
+The numbers in parentheses indicate how many sources are being used from each region. If a source isn't recognized, it will be listed under "Unknown" sources.
 
 ### Code Organization
 
@@ -25,6 +39,61 @@ For terms containing spaces:
 - In CLI mode: Use quotes (`"climate crisis"`)
 - In API mode: Use URL encoding (`climate%20crisis`)
 
+### Mock Mode
+
+For testing and development purposes, you can run the crawler in mock mode. This mode uses predefined test data instead of making real network requests, which is useful for the following:
+- Offline development and testing
+- Faster response times
+- Consistent, predictable results
+- UI development and integration testing
+
+To use mock mode:
+
+1. CLI Mode with mock data:
+```bash
+# Search for climate articles using mock data
+python main.py cli --crawler body --include climate --mock
+
+# Search URLs with mock data
+python main.py cli --crawler url --include tech --exclude AI --mock
+```
+
+2. API Mode with mock data:
+```bash
+# Start the API server in mock mode
+python main.py api --mock
+```
+
+The mock data includes example articles about:
+- Climate change
+- Tech regulations
+- AI technology
+- Healthcare innovation
+- Sustainable energy
+
+Mock mode supports all the same filtering options as the real crawler:
+- Keyword filtering
+- Date filtering
+- Source filtering (TheGuardian, TheNewYorker, Wired)
+- Article limit
+
+#### Toggling Mock Mode via API
+
+While the API server is running, you can toggle mock mode on and off using the `/mock/{state}` endpoint:
+
+```bash
+# Enable mock mode
+curl "http://localhost:8000/mock/true"
+
+# Disable mock mode
+curl "http://localhost:8000/mock/false"
+```
+
+This is useful for:
+- Testing both real and mock data in the same session
+- Switching between mock and real data without restarting the server
+- Integration testing with different data sources
+
 #### CLI Mode Examples
 
 To search for environmental articles from The Guardian in the last 2 days using multiple keywords with OR logic (using many keywords works well for body text search to cover a subject):
@@ -32,7 +101,7 @@ To search for environmental articles from The Guardian in the last 2 days using 
 python main.py cli --crawler body --max_articles 10 --days_back 2 --sources TheGuardian --include pollution environmental "climate crisis" EPA coral reef
 ```
 
-To search URLs for Apple and technology but exclude the word AI (which probably won't find many articles):
+To search URLs for Apple and technology but exclude the word AI (which might not find many articles, if any):
 ```
 python main.py cli --crawler url --include Apple technology --exclude AI
 ```
@@ -48,7 +117,7 @@ Required arguments:
 Optional arguments:
 - `--max_articles`: Maximum number of articles to retrieve (default: unlimited).
 - `--days_back`: Number of days back to search (default: 7).
-- `--exclude`: List of keywords to exclude from the search (only works with URL crawler).
+- `--exclude`: List of keywords to exclude from URLs (only works with URL crawler, not body search).
 - `--timeout`: Maximum number of seconds to run the query (optional, no default timeout). When reached, returns articles collected up to that point.
 - `--sources`: List of news sources to crawl (e.g., TheNewYorker, TheGuardian). If not specified, uses all US, UK, Australian, and Canadian sources.
 
@@ -75,7 +144,7 @@ Required parameters:
 Optional parameters:
 - `max_articles`: Maximum number of articles to retrieve (optional)
 - `days_back`: Days to look back (default: 7)
-- `exclude`: Keywords to exclude from search (only works with /crawl/url endpoint)
+- `exclude`: Keywords to exclude from URLs (only works with /crawl/url endpoint, not with /crawl/body)
 - `timeout`: Maximum number of seconds to run the query (default: 25 seconds). When reached, returns articles collected up to that point.
 - `sources`: Comma-separated list of news sources to crawl (e.g., 'TheNewYorker,TheGuardian'). If not specified, uses all US, UK, Australian, and Canadian sources
 
@@ -126,15 +195,16 @@ black --diff .
 ## Future Work
 - General code improvements and find anything weird introduced by AI
 - Handle this: `Unexpected error processing article: OSError: [Errno 24] Too many open files`
+- Handle more than one request at a time in a better way
 - Add end_date as option to pass in (and rename days_back to start_date)
 - It's matching on part of words (so `threefold` matches `reef`), which isn't helpful in many cases
 - Make some more useful preset searches like daily essential news or favorite subjects
 - It'd be nice if it saved things rather than just displayed them in the terminal
-- It'd be nice to have a UI
 - Testing that isn't manual
 - Sentiment analysis would be really useful
 - Making it work properly with news in other languages would be nice
 - Improve date filtering when doing URL search
+- It'd be nice to be able to simulate the timeout properly with mock data, but that can be done later if it seems useful enough
 
 ## Resources
 - [fundus](https://github.com/flairNLP/fundus) and [fundus supported publishers](https://github.com/flairNLP/fundus/blob/master/docs/supported_publishers.md)
