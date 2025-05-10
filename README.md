@@ -1,5 +1,9 @@
 # news-crawler
 
+<div style="background-color: #fff; border: 1px solid #ddd; padding: 15px; margin: 20px 0; border-radius: 4px; box-shadow: 0 2px 4px rgba(0,0,0,0.1); transform: rotate(-1deg);">
+  <strong>📝 Note:</strong> This project has been an experiment with using Cursor and included some vibe coding as is evident from this note, which I would have never even thought to rotate before.
+</div>
+
 Uses `fundus` for news crawling and includes both a CLI mode and an API mode. There are no guarantees with this code, and it could change completely any time. It's a bit of an experiment -- both with news crawling and also with using AI in development (Copilot and Cursor primarily).
 
 If you use this tool, please use it responsibly. Data isn't free, and neither is journalism.
