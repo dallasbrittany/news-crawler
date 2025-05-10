@@ -6,6 +6,7 @@ import signal
 import requests
 from fundus import Crawler, PublisherCollection, Sitemap, Article
 from crawlers.helpers import display, print_divider
+from crawlers.mock_data import normalize_source_name
 
 
 def timeout_handler(signum, frame):
@@ -63,10 +64,14 @@ def format_sources(sources_list):
         if source_name:
             # Check which collection it belongs to
             found = False
+            normalized_source_name = normalize_source_name(source_name)
             for region, collection in PUBLISHER_COLLECTIONS.items():
-                if hasattr(collection, source_name):
-                    sources_by_region[region].append(source_name)
-                    found = True
+                for name, publisher in vars(collection).items():
+                    if not name.startswith("__") and normalize_source_name(name) == normalized_source_name:
+                        sources_by_region[region].append(source_name)
+                        found = True
+                        break
+                if found:
                     break
             if not found:
                 unknown_sources.append(source_name)
