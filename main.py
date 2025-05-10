@@ -10,6 +10,7 @@ from crawlers.base_crawler import (
     TimeoutError,
     PUBLISHER_COLLECTIONS,
     PUBLISHER_COLLECTIONS_LIST,
+    CLICrawler,
 )
 
 
@@ -114,9 +115,11 @@ def main(
                 is_url_search=False,  # Body search
             )
         else:
-            from crawlers import BodyFilterCrawler
 
-            crawler = BodyFilterCrawler(
+            class CLIBodyFilterCrawler(CLICrawler, BodyFilterCrawler):
+                pass
+
+            crawler = CLIBodyFilterCrawler(
                 crawler_sources,
                 max_articles,
                 days_back,
@@ -141,9 +144,11 @@ def main(
                 is_url_search=True,  # URL search
             )
         else:
-            from crawlers import UrlFilterCrawler
 
-            url_filter_crawler = UrlFilterCrawler(
+            class CLIUrlFilterCrawler(CLICrawler, UrlFilterCrawler):
+                pass
+
+            url_filter_crawler = CLIUrlFilterCrawler(
                 crawler_sources,
                 max_articles,
                 days_back,

@@ -4,6 +4,7 @@ import datetime
 import time
 import threading
 import requests
+import signal
 from fundus import Crawler, PublisherCollection, Sitemap, Article
 from crawlers.helpers import display, print_divider
 from crawlers.mock_data import normalize_source_name
@@ -11,6 +12,10 @@ from crawlers.mock_data import normalize_source_name
 
 def timeout_handler(timeout_event):
     timeout_event.set()
+
+
+def cli_timeout_handler(signum, frame):
+    raise TimeoutError("Crawler operation timed out")
 
 
 class CrawlerError(Exception):
@@ -282,6 +287,120 @@ class BaseCrawler(ABC):
         finally:
             if timer:
                 timer.cancel()  # Cancel the timer if it's still running
+
+        if display_output:
+            print(f"\nCrawling completed. Found {len(articles)} article(s).")
+            print_divider()
+
+        return articles
+
+
+class CLICrawler(BaseCrawler):
+    """A version of BaseCrawler that uses signal-based timeouts for CLI mode."""
+
+    def run_crawler(
+        self, display_output: bool = True, show_body: bool = True
+    ) -> List[Article]:
+        filter_params = self.get_filter_params()
+        articles = []
+        start_time = time.time()
+        error_count = 0
+        max_retries = 3
+
+        # Set up the timeout handler using signal
+        original_handler = None
+        if self.timeout_seconds:
+            original_handler = signal.signal(signal.SIGALRM, cli_timeout_handler)
+            signal.alarm(self.timeout_seconds)
+            print(f"Set crawler timeout for {self.timeout_seconds} seconds")
+
+        try:
+            article_iterator = self.crawler.crawl(
+                max_articles=self.max_articles, **filter_params
+            )
+
+            while True:
+                try:
+                    article = next(article_iterator, None)
+                    if article is None:  # No more articles
+                        break
+
+                    # Check if we have a valid publishing date
+                    if (
+                        not hasattr(article, "publishing_date")
+                        or article.publishing_date is None
+                    ):
+                        if display_output:
+                            print("\nSkipping article with no publishing date")
+                        continue
+
+                    # URL filters don't check date because they only look at the URLs, so it's done here instead
+                    if article.publishing_date.date() >= self.start_date:
+                        if display_output:
+                            display(article, show_body=show_body)
+                        articles.append(article)
+                    elif self.max_articles:
+                        if display_output:
+                            print("\n(Skipping display of older article.)")
+                            print_divider()
+                    else:
+                        if display_output:
+                            print(".")
+
+                except (
+                    requests.exceptions.RequestException,
+                    requests.exceptions.ConnectionError,
+                ) as e:
+                    error_count += 1
+                    if error_count >= max_retries:
+                        raise NetworkError(
+                            f"Network error after {max_retries} retries: {str(e)}"
+                        )
+                    if display_output:
+                        print(
+                            f"\nNetwork error encountered, retrying ({error_count}/{max_retries})..."
+                        )
+                    time.sleep(1)  # Add a small delay before retrying
+                    continue
+                except AttributeError as e:
+                    if display_output:
+                        print(f"\nSkipping article due to missing attribute: {str(e)}")
+                    continue
+                except TimeoutError as e:
+                    # This is our intentional timeout, handle it gracefully
+                    elapsed_time = time.time() - start_time
+                    if display_output:
+                        print(
+                            f"\nTimeout reached after {elapsed_time:.1f} seconds (limit was {self.timeout_seconds} seconds). Returning {len(articles)} articles collected so far."
+                        )
+                        print_divider()
+                    return articles
+                except Exception as e:
+                    if display_output:
+                        print(
+                            f"\nUnexpected error processing article: {type(e).__name__}: {str(e)}"
+                        )
+                    continue
+
+        except TimeoutError as e:
+            # This is our intentional timeout, handle it gracefully
+            elapsed_time = time.time() - start_time
+            if display_output:
+                print(
+                    f"\nTimeout reached after {elapsed_time:.1f} seconds (limit was {self.timeout_seconds} seconds). Returning {len(articles)} articles collected so far."
+                )
+                print_divider()
+            return articles
+        except Exception as e:
+            if display_output:
+                print(f"\nError during crawling: {type(e).__name__}: {str(e)}")
+                print_divider()
+            raise CrawlerError(f"Crawler error: {str(e)}")
+        finally:
+            # Restore the original signal handler and cancel any pending alarm
+            if original_handler:
+                signal.alarm(0)
+                signal.signal(signal.SIGALRM, original_handler)
 
         if display_output:
             print(f"\nCrawling completed. Found {len(articles)} article(s).")
