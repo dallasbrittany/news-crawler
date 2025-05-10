@@ -4,6 +4,13 @@ from fundus import PublisherCollection
 from crawlers import BodyFilterCrawler, UrlFilterCrawler
 from crawlers.helpers import print_exclude_not_implemented
 from typing import Optional, List
+from crawlers.base_crawler import (
+    CrawlerError,
+    NetworkError,
+    TimeoutError,
+    PUBLISHER_COLLECTIONS,
+    PUBLISHER_COLLECTIONS_LIST,
+)
 
 
 def normalize_source_name(name: str) -> str:
@@ -22,12 +29,7 @@ def get_sources(source_names: Optional[List[str]] = None):
 
     # Create a mapping of normalized names to actual source objects
     source_mapping = {}
-    for collection in [
-        PublisherCollection.us,
-        PublisherCollection.uk,
-        PublisherCollection.au,
-        PublisherCollection.ca,
-    ]:
+    for collection in PUBLISHER_COLLECTIONS_LIST:
         for name, source in vars(collection).items():
             if not name.startswith("__"):
                 source_mapping[normalize_source_name(name)] = (name, source)
@@ -46,12 +48,7 @@ def get_sources(source_names: Optional[List[str]] = None):
     if invalid_sources:
         # Get list of valid sources with their display names
         valid_sources = {}
-        for collection in [
-            PublisherCollection.us,
-            PublisherCollection.uk,
-            PublisherCollection.au,
-            PublisherCollection.ca,
-        ]:
+        for collection in PUBLISHER_COLLECTIONS_LIST:
             for name, source in vars(collection).items():
                 if not name.startswith("__"):
                     display_name = " ".join(

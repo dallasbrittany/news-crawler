@@ -39,6 +39,8 @@ PUBLISHER_COLLECTIONS = {
     "CA": PublisherCollection.ca,
 }
 
+PUBLISHER_COLLECTIONS_LIST = list(PUBLISHER_COLLECTIONS.values())
+
 
 def format_sources(sources_list):
     """Format sources list in a readable way, grouped by region."""

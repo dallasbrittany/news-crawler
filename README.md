@@ -8,6 +8,9 @@ Uses `fundus` for news crawling and includes both a CLI mode and an API mode. Th
 
 If you use this tool, please use it responsibly. Data isn't free, and neither is journalism.
 
+## Immediate Issues
+- The timeout may not be working right with the API.
+
 ## Usage
 - Install with `pipenv` with the Python version specified in `.python-version` -- see bottom of this file for some `pipenv` tips.
 - The crawler can be run in two modes: CLI or API. The CLI mode is mainly for quickly experimenting and watching headlines scroll by. The API mode has been added so a UI can be built to connect to it for easier viewing of the articles.
@@ -101,7 +104,7 @@ To search for environmental articles from The Guardian in the last 2 days using 
 python main.py cli --crawler body --max_articles 10 --days_back 2 --sources TheGuardian --include pollution environmental "climate crisis" EPA coral reef
 ```
 
-To search URLs for Apple and technology but exclude the word AI (which probably won't find many articles):
+To search URLs for Apple and technology but exclude the word AI (which might not find many articles, if any):
 ```
 python main.py cli --crawler url --include Apple technology --exclude AI
 ```
