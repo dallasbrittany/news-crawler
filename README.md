@@ -9,13 +9,14 @@ Uses `fundus` for news crawling and includes both a CLI mode and an API mode. Th
 If you use this tool, please use it responsibly. Data isn't free, and neither is journalism.
 
 ## Immediate Issues
-- Update readme
+- Testing with the UI needs to be done more
 
 ### Could Use Improvements
 - Seems repetitive the way it's doing `if t.strip()` so much; also remove other repetitive things
 - Why'd it get rid of the doc string for `handle_crawler_request`?
 
 ### To Verify
+- Source name normalization approach
 - Should `ArticleResponse` authors be optional?
 - How does `run_in_threadpool` work?
 - `is_whole_word_match`
@@ -78,6 +79,23 @@ Mock mode supports all the same filtering options as the real crawler:
 - Date filtering
 - Source filtering (TheGuardian, TheNewYorker, Wired)
 - Article limit
+
+#### Toggling Mock Mode via API
+
+While the API server is running, you can toggle mock mode on and off using the `/mock/{state}` endpoint:
+
+```bash
+# Enable mock mode
+curl "http://localhost:8000/mock/true"
+
+# Disable mock mode
+curl "http://localhost:8000/mock/false"
+```
+
+This is useful for:
+- Testing both real and mock data in the same session
+- Switching between mock and real data without restarting the server
+- Integration testing with different data sources
 
 #### CLI Mode Examples
 
@@ -180,12 +198,11 @@ black --diff .
 ## Future Work
 - General code improvements and find anything weird introduced by AI
 - Handle this: `Unexpected error processing article: OSError: [Errno 24] Too many open files`
-- Handle more than one request at a time
+- Handle more than one request at a time in a better way
 - Add end_date as option to pass in (and rename days_back to start_date)
 - It's matching on part of words (so `threefold` matches `reef`), which isn't helpful in many cases
 - Make some more useful preset searches like daily essential news or favorite subjects
 - It'd be nice if it saved things rather than just displayed them in the terminal
-- It'd be nice to have a UI
 - Testing that isn't manual
 - Sentiment analysis would be really useful
 - Making it work properly with news in other languages would be nice
