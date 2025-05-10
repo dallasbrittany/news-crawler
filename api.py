@@ -33,7 +33,7 @@ class ArticleResponse(BaseModel):
 
 class CrawlerResponse(BaseModel):
     articles: List[ArticleResponse]
-    message: str = "Success"  # Added default value
+    message: str = "Success"
     error: Optional[str] = None
 
 
@@ -253,7 +253,7 @@ def expand_terms(terms: List[str]) -> List[str]:
     expanded = []
     for term in terms:
         if "," in term:
-            expanded.extend(t.strip() for t in term.split(",") if t.strip())
+            expanded.extend(t.strip() for t in term.split(","))
         else:
             expanded.append(term.strip())
     return expanded
