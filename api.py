@@ -269,14 +269,8 @@ async def handle_crawler_request(
     crawler_class,
 ) -> CrawlerResponse:
     try:
-        print(f"API received timeout parameter: {params.timeout} seconds")
-        print(f"Include terms: {include}")
-        if exclude:
-            print(f"Exclude terms: {exclude}")
-
         # Parse and validate sources
         sources_list = parse_sources(sources, params.sources)
-        print(f"Parsed sources: {sources_list}")
 
         if app.state.use_mock:
             from crawlers.mock_crawler import MockCrawler
