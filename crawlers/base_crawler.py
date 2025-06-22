@@ -69,15 +69,11 @@ def format_sources(sources_list):
         # Handle individual publisher objects
         source_name = getattr(source, "name", None)
         if source_name:
-            # Check which collection it belongs to
+            # Check which collection it belongs to by comparing the actual source object
             found = False
-            normalized_source_name = normalize_source_name(source_name)
             for region, collection in PUBLISHER_COLLECTIONS.items():
-                for name, publisher in vars(collection).items():
-                    if (
-                        not name.startswith("__")
-                        and normalize_source_name(name) == normalized_source_name
-                    ):
+                for class_name, publisher in vars(collection).items():
+                    if not class_name.startswith("__") and publisher == source:
                         sources_by_region[region].append(source_name)
                         found = True
                         break
