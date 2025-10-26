@@ -1,19 +1,19 @@
 # news-crawler
 
-<div style="background-color: #fff; border: 1px solid #ddd; padding: 15px; margin: 20px 0; border-radius: 4px; box-shadow: 0 2px 4px rgba(0,0,0,0.1); transform: rotate(-1deg);">
-  <strong>📝 Note:</strong> This project has been an experiment with using Cursor and included some vibe coding as is evident from this note, which I would have never even thought to rotate before.
-</div>
+<strong>📝 Note:</strong> This project was my first experiment with Cursor vibe coding. If I decide I care about having a news crawler, I'll definitely be redoing this backend. It's good enough for me to get an idea of what I can find using with fundus though and reading general news without photos.
 
 Uses `fundus` for news crawling and includes both a CLI mode and an API mode. There are no guarantees with this code, and it could change completely any time. It's a bit of an experiment -- both with news crawling and also with using AI in development (Copilot and Cursor primarily).
 
 If you use this tool, please use it responsibly. Data isn't free, and neither is journalism.
 
 ## Usage
+
 - Install with `pipenv` with the Python version specified in `.python-version` -- see bottom of this file for some `pipenv` tips.
 - The crawler can be run in two modes: CLI or API. The CLI mode is mainly for quickly experimenting and watching headlines scroll by. The API mode has been added so a UI can be built to connect to it for easier viewing of the articles.
 - Right now, there are two types of searches -- body text and URL text. Searching body text allows for searching with multiple keywords using OR. Searching URL text allows for searching for multiple keywords using AND but also allows ensuring there are excluded keywords, as well. There is date filtering available, but it's better supported for the body text search.
 
 When the crawler initializes, it displays the sources grouped by region with counts. For example:
+
 ```
 Initialized crawler with sources:
 US (18): The New York Times, The Washington Post, ...
@@ -21,6 +21,7 @@ UK (12): The Guardian, BBC, ...
 AU (8): The Sydney Morning Herald, ...
 CA (6): The Globe and Mail, ...
 ```
+
 The numbers in parentheses indicate how many sources are being used from each region. If a source isn't recognized, it will be listed under "Unknown" sources.
 
 ### Code Organization
@@ -36,12 +37,14 @@ The numbers in parentheses indicate how many sources are being used from each re
 The API mode has a default timeout of 25 seconds, but the CLI mode has no default timeout. When a timeout occurs in API mode, any articles that were successfully collected up to that point are returned. For CLI mode, articles are printed continuously, and Ctrl+C is a good way to stop the crawler.
 
 For terms containing spaces:
+
 - In CLI mode: Use quotes (`"climate crisis"`)
 - In API mode: Use URL encoding (`climate%20crisis`)
 
 ### Mock Mode
 
 For testing and development purposes, you can run the crawler in mock mode. This mode uses predefined test data instead of making real network requests, which is useful for the following:
+
 - Offline development and testing
 - Faster response times
 - Consistent, predictable results
@@ -50,6 +53,7 @@ For testing and development purposes, you can run the crawler in mock mode. This
 To use mock mode:
 
 1. CLI Mode with mock data:
+
 ```bash
 # Search for climate articles using mock data
 python main.py cli --crawler body --include climate --mock
@@ -59,12 +63,14 @@ python main.py cli --crawler url --include tech --exclude AI --mock
 ```
 
 2. API Mode with mock data:
+
 ```bash
 # Start the API server in mock mode
 python main.py api --mock
 ```
 
 The mock data includes example articles about:
+
 - Climate change
 - Tech regulations
 - AI technology
@@ -72,6 +78,7 @@ The mock data includes example articles about:
 - Sustainable energy
 
 Mock mode supports all the same filtering options as the real crawler:
+
 - Keyword filtering
 - Date filtering
 - Source filtering (TheGuardian, TheNewYorker, Wired)
@@ -90,6 +97,7 @@ curl "http://localhost:8000/mock/false"
 ```
 
 This is useful for:
+
 - Testing both real and mock data in the same session
 - Switching between mock and real data without restarting the server
 - Integration testing with different data sources
@@ -97,24 +105,29 @@ This is useful for:
 #### CLI Mode Examples
 
 To search for environmental articles from The Guardian in the last 2 days using multiple keywords with OR logic (using many keywords works well for body text search to cover a subject):
+
 ```
 python main.py cli --crawler body --max_articles 10 --days_back 2 --sources TheGuardian --include pollution environmental "climate crisis" EPA coral reef
 ```
 
 To search URLs for Apple and technology but exclude the word AI (which might not find many articles, if any):
+
 ```
 python main.py cli --crawler url --include Apple technology --exclude AI
 ```
 
 Use a timeout to limit how long the crawler runs and return partial results collected:
+
 ```
 python main.py cli --crawler body --include climate --timeout 30
 ```
 
 Required arguments:
+
 - `--include`: List of keywords to include in the search (required)
 
 Optional arguments:
+
 - `--max_articles`: Maximum number of articles to retrieve (default: unlimited).
 - `--days_back`: Number of days back to search (default: 7).
 - `--exclude`: List of keywords to exclude from URLs (only works with URL crawler, not body search).
@@ -122,6 +135,7 @@ Optional arguments:
 - `--sources`: List of news sources to crawl (e.g., TheNewYorker, TheGuardian). If not specified, uses all US, UK, Australian, and Canadian sources.
 
 #### API Mode
+
 The crawler can be run as an API server that provides the same functionality as CLI mode but through HTTP endpoints.
 
 ```bash
@@ -135,13 +149,16 @@ python main.py api --host 0.0.0.0 --port 8080
 The API documentation will be available at `http://localhost:8000/docs` when the server is running.
 
 Available endpoints:
+
 - `/crawl/body` - Search articles by body content
 - `/crawl/url` - Search articles by URL text
 
 Required parameters:
+
 - `include`: Keywords to include in search (required). Can be provided either as multiple parameters or comma-separated values.
 
 Optional parameters:
+
 - `max_articles`: Maximum number of articles to retrieve (optional)
 - `days_back`: Days to look back (default: 7)
 - `exclude`: Keywords to exclude from URLs (only works with /crawl/url endpoint, not with /crawl/body)
@@ -149,6 +166,7 @@ Optional parameters:
 - `sources`: Comma-separated list of news sources to crawl (e.g., 'TheNewYorker,TheGuardian'). If not specified, uses all US, UK, Australian, and Canadian sources
 
 Example API calls:
+
 ```bash
 # Search for articles about climate and pollution (uses default 25 second timeout)
 
@@ -169,10 +187,12 @@ curl "http://localhost:8000/crawl/url?sources=TheGuardian&include=climate&exclud
 ```
 
 For both `include` and `exclude` in API calls, you can provide terms in two ways (at least for now):
+
 1. Multiple parameters: `include=term1&include=term2`
 2. Comma-separated: `include=term1,term2`
 
 ### Code Formatting
+
 This project uses Black for code formatting. To format your code:
 
 ```bash
@@ -193,6 +213,7 @@ black --diff .
 ```
 
 ## Future Work
+
 - General code improvements and find anything weird introduced by AI
 - Handle this: `Unexpected error processing article: OSError: [Errno 24] Too many open files`
 - Handle more than one request at a time in a better way
@@ -207,6 +228,7 @@ black --diff .
 - It'd be nice to be able to simulate the timeout properly with mock data, but that can be done later if it seems useful enough
 
 ## Resources
+
 - [fundus](https://github.com/flairNLP/fundus) and [fundus supported publishers](https://github.com/flairNLP/fundus/blob/master/docs/supported_publishers.md)
 
 > NOTE: Fundus' filters work inversely to Python's built-in filter. A filter in Fundus describes what is filtered out and not what's kept. If a filter returns True on a specific element the element will be dropped.
@@ -214,6 +236,7 @@ black --diff .
 ### Python
 
 Before running, get the virtual environment ready:
+
 ```
 pipenv --python $(pyenv which python)
 pipenv shell
@@ -221,6 +244,7 @@ pipenv install
 ```
 
 To remove the virtual environment:
+
 ```
 pipenv --rm
 ```
